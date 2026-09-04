@@ -68,6 +68,7 @@
     var el = $('place-err');
     el.textContent = detail ? CSM.t(key) + ' ' + detail : CSM.t(key);
     el.hidden = false;
+    CSM.announce(el.textContent);
   }
   function clearError() { $('place-err').hidden = true; }
 
@@ -123,6 +124,7 @@
       ul.appendChild(li);
     });
     ul.hidden = false;
+    CSM.announce(CSM.t('obs.results').replace('{n}', list.length));
   }
 
   function locate() {
@@ -231,21 +233,34 @@
     $('pass-list').innerHTML = '';
     var here = place;
 
+    var bar = $('pass-progress');
+    bar.hidden = false;
+    bar.setAttribute('aria-valuenow', '0');
+    bar.firstElementChild.style.width = '0%';
+    $('pass-status').textContent = CSM.t('pass.loading');
+
     fetchTrack(function (done, total) {
-      $('pass-status').textContent = CSM.t('pass.loading')
-        .replace('{done}', done).replace('{total}', total);
+      var pct = Math.round(done / total * 100);
+      bar.setAttribute('aria-valuenow', String(pct));
+      bar.firstElementChild.style.width = pct + '%';
     })
       .then(function (samples) {
         passesBusy = false;
+        $('pass-progress').hidden = true;
         if (place !== here) return;             // the user moved on
         passes = findPasses(samples, here.lat, here.lon);
         passesAt = Date.now();
         paintPasses();
         paintDome();
+        CSM.announce(passes.length
+          ? CSM.t('pass.found').replace('{n}', passes.length)
+          : CSM.t('pass.none'));
       })
       .catch(function () {
         passesBusy = false;
+        $('pass-progress').hidden = true;
         $('pass-status').textContent = CSM.t('pass.error');
+        CSM.announce(CSM.t('pass.error'));
       });
   }
 
@@ -452,6 +467,9 @@
     clearError();
     paintPanel();
     sizeDome();
+    CSM.announce(CSM.t('obs.set').replace('{place}', p.label || CSM.t('obs.you')));
+    var panel = $('obs-panel');
+    if (panel.setAttribute) { panel.setAttribute('tabindex', '-1'); panel.focus({ preventScroll: true }); }
     passes = null;
     $('pass-list').innerHTML = '';
     loadPasses(true);
@@ -486,7 +504,7 @@
     paintPasses();
   });
 
-  window.addEventListener('resize', sizeDome, { passive: true });
+  CSM.onResize(sizeDome);
 
   paintPanel();
   sizeDome();

@@ -45,6 +45,9 @@
   </symbol>
 </svg>
 
+<a class="skip-link" href="#main" data-i18n="skip">Skip to the content</a>
+<p class="sr-only" id="announcer" role="status" aria-live="polite"></p>
+
 <canvas id="stars" aria-hidden="true"></canvas>
 <div class="glow" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
@@ -64,7 +67,7 @@
   </div>
 </header>
 
-<main>
+<main id="main" tabindex="-1">
 
   <section class="hero">
     <h1 data-i18n="hero.h1">Where the <em>Space&nbsp;Station</em> is, right now.</h1>
@@ -79,7 +82,7 @@
   <section class="card map-card" aria-labelledby="map-title">
     <div class="card-head">
       <h2 id="map-title" data-i18n="map.title">Live position</h2>
-      <p class="status" id="status" role="status" aria-live="polite">
+      <p class="status" id="status" aria-live="off">
         <span class="dot" aria-hidden="true"></span><span id="status-text">Listening…</span>
       </p>
     </div>
@@ -129,7 +132,7 @@
 
   <!-- ---------------- from where you are ---------------- -->
 
-  <section class="section" id="observer" aria-labelledby="obs-title">
+  <section class="reveal section" id="observer" aria-labelledby="obs-title">
     <div class="sec-head">
       <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
       <h2 id="obs-title" data-i18n="obs.title">From where you are</h2>
@@ -203,8 +206,11 @@
       <div class="passes">
         <div class="passes-head">
           <h4 data-i18n="pass.title">Next passes overhead</h4>
-          <p class="passes-status" id="pass-status" role="status" aria-live="polite"></p>
+          <p class="passes-status" id="pass-status"></p>
         </div>
+        <div class="pass-progress" id="pass-progress" role="progressbar"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+             data-i18n-aria-label="pass.progress" aria-label="Reading the track" hidden><span></span></div>
         <ol class="pass-list" id="pass-list"></ol>
         <p class="hint" id="pass-hint" data-i18n="pass.hint">Computed from the Station's own track over the
         next twelve hours. A pass marked as visible means it is still in sunlight while your sky is dark.</p>
@@ -214,7 +220,7 @@
 
   <!-- ---------------- how far is up ---------------- -->
 
-  <section class="section" aria-labelledby="ladder-title">
+  <section class="reveal section" aria-labelledby="ladder-title">
     <div class="sec-head">
       <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
       <h2 id="ladder-title" data-i18n="ladder.title">How far up is up?</h2>
@@ -232,7 +238,7 @@
 
   <!-- ---------------- the neighbourhood ---------------- -->
 
-  <section class="section" aria-labelledby="solar-title">
+  <section class="reveal section" aria-labelledby="solar-title">
     <div class="sec-head">
       <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
       <h2 id="solar-title" data-i18n="solar.title">The neighbourhood</h2>
@@ -249,7 +255,7 @@
 
   <!-- ---------------- notes ---------------- -->
 
-  <section class="section notes">
+  <section class="reveal section notes">
     <div class="sec-head">
       <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
       <h2 data-i18n="notes.title">How to read the map</h2>
@@ -273,7 +279,7 @@
     </div>
   </section>
 
-  <section class="section roadmap">
+  <section class="reveal section roadmap">
     <div class="sec-head">
       <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
       <h2 data-i18n="road.title">What comes next</h2>

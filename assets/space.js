@@ -280,7 +280,7 @@
 
   /* ================================================================== */
 
-  window.addEventListener('resize', function () { sizeLadder(); sizeSolar(); }, { passive: true });
+  CSM.onResize(function () { sizeLadder(); sizeSolar(); });
   CSM.on('lang', function () { paintLadder(); paintSolar(); });
   CSM.on('position', paintLadder);   // the ladder tracks the live altitude
 

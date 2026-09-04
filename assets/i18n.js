@@ -10,6 +10,7 @@ window.I18N = {
     'doc.title': 'Cozy Space Missions — where the ISS is right now',
     'doc.desc': "A quiet window on the sky: the International Space Station's live position, when it passes over you, and where Earth sits among its neighbours.",
 
+    'skip': 'Skip to the content',
     'lang.group': 'Language',
     'brand.sub': 'A quiet window on the sky',
 
@@ -62,6 +63,8 @@ window.I18N = {
     'obs.locate': 'Use my position',
     'obs.change': 'Change',
     'obs.you': 'Your position',
+    'obs.results': '{n} places found. Pick one.',
+    'obs.set': 'Position set to {place}. Reading the track.',
 
     'obs.err.short': 'Type at least a couple of letters.',
     'obs.err.none': 'No match for that one — try adding the town or country.',
@@ -81,7 +84,9 @@ window.I18N = {
 
     'pass.title': 'Next passes overhead',
     'pass.hint': "Worked out from the Station's own track over the next twelve hours. A pass counts as visible when the Station is still in sunlight while your sky is already dark.",
-    'pass.loading': 'reading the track… {done}/{total}',
+    'pass.loading': 'reading the track…',
+    'pass.progress': 'Reading the Station track',
+    'pass.found': '{n} passes found in the next twelve hours.',
     'pass.error': 'could not read the track',
     'pass.none': 'Nothing higher than 10° above your horizon in the next twelve hours. Passes come in clusters — try again tomorrow.',
     'pass.visible': 'visible',
@@ -140,6 +145,7 @@ window.I18N = {
     'doc.title': 'Cozy Space Missions — dove si trova la ISS adesso',
     'doc.desc': 'Una finestra tranquilla sul cielo: la posizione in tempo reale della Stazione Spaziale Internazionale, quando passa sopra di te, e dove si trova la Terra fra i suoi vicini.',
 
+    'skip': 'Vai al contenuto',
     'lang.group': 'Lingua',
     'brand.sub': 'Una finestra tranquilla sul cielo',
 
@@ -192,6 +198,8 @@ window.I18N = {
     'obs.locate': 'Usa la mia posizione',
     'obs.change': 'Cambia',
     'obs.you': 'La tua posizione',
+    'obs.results': '{n} luoghi trovati. Scegline uno.',
+    'obs.set': 'Posizione impostata su {place}. Leggo la traccia.',
 
     'obs.err.short': 'Scrivi almeno un paio di lettere.',
     'obs.err.none': 'Nessun risultato — prova ad aggiungere città o nazione.',
@@ -211,7 +219,9 @@ window.I18N = {
 
     'pass.title': 'Prossimi passaggi',
     'pass.hint': 'Calcolati dalla traccia della Stazione nelle prossime dodici ore. Un passaggio è visibile quando la Stazione è ancora al sole mentre il tuo cielo è già buio.',
-    'pass.loading': 'leggo la traccia… {done}/{total}',
+    'pass.loading': 'leggo la traccia…',
+    'pass.progress': 'Lettura della traccia della Stazione',
+    'pass.found': '{n} passaggi trovati nelle prossime dodici ore.',
     'pass.error': 'traccia non disponibile',
     'pass.none': 'Niente sopra i 10° dal tuo orizzonte nelle prossime dodici ore. I passaggi arrivano a gruppi — riprova domani.',
     'pass.visible': 'visibile',

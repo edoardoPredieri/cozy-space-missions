@@ -20,6 +20,28 @@
   /* ------------------------------------------------------------------ */
 
   var listeners = { lang: [], position: [] };
+  var resizeFns = [];
+  var resizePending = false;
+
+  function onResize(fn) { resizeFns.push(fn); }
+
+  window.addEventListener('resize', function () {
+    if (resizePending) return;
+    resizePending = true;
+    requestAnimationFrame(function () {
+      resizePending = false;
+      resizeFns.forEach(function (fn) {
+        try { fn(); } catch (e) {}
+      });
+    });
+  }, { passive: true });
+
+  /* One polite live region for the whole page: ambient updates (the clock in the
+     status pill) must not be announced, only things the reader needs to know. */
+  function announce(text) {
+    var el = document.getElementById('announcer');
+    if (el) el.textContent = text;
+  }
   function emit(name, payload) {
     (listeners[name] || []).forEach(function (fn) {
       try { fn(payload); } catch (e) { /* one bad listener must not stop the rest */ }
@@ -128,7 +150,7 @@
       if (!reduceMotion) requestAnimationFrame(draw);
     }
 
-    window.addEventListener('resize', resize, { passive: true });
+    onResize(resize);
     resize();
     if (!reduceMotion) requestAnimationFrame(draw);
   })();
@@ -439,7 +461,11 @@
       })
       .catch(function () {
         failures++;
-        if (failures >= 2) { status.kind = 'lost'; paintStatus(); }
+        if (failures === 2) {
+          status.kind = 'lost';
+          paintStatus();
+          announce(t('status.lost'));
+        }
       });
   }
 
@@ -474,6 +500,8 @@
     t: t,
     fmt: fmt,
     fetchJSON: fetchJSON,
+    announce: announce,
+    onResize: onResize,
     lang: function () { return lang; },
     position: function () { return state.pos; },
     on: function (name, fn) {
@@ -483,7 +511,7 @@
     }
   };
 
-  window.addEventListener('resize', sizeCanvas, { passive: true });
+  onResize(sizeCanvas);
   applyLang(lang);
   sizeCanvas();
 
@@ -494,4 +522,20 @@
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) updatePosition();
   });
+
+  /* Sections fade up as they come into view — 350ms, ease-out, opacity and
+     transform only. Under reduced motion they are simply already there. */
+  (function reveal() {
+    var items = document.querySelectorAll('.reveal');
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      for (var i = 0; i < items.length; i++) items[i].classList.add('is-in');
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+    for (var j = 0; j < items.length; j++) io.observe(items[j]);
+  })();
 })();

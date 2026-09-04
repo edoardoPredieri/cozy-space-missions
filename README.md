@@ -56,6 +56,19 @@ the observer's horizon.
 Planet positions use the JPL approximate Keplerian elements (valid 1800–2050), accurate to a
 fraction of a degree — plenty for a picture of the neighbourhood.
 
+## Accessibility
+
+Audited against the UI/UX Pro Max rule set. Every text/background pair meets 4.5:1 (verified by
+compositing the real translucent surfaces, not the token values); pointer targets are 24 CSS px or
+larger, 44 px on coarse pointers; headings run h1→h4 without skipping; icons are SVG with
+`aria-hidden` beside visible text; the canvases carry `role="img"` and translated labels.
+
+The page has exactly one polite live region. The status pill updates every five seconds, so it is
+deliberately *not* live — announcing a clock every five seconds is worse than announcing nothing.
+Real events (position set, passes found, connection lost, form errors) go through the single
+announcer instead. Motion is opacity and transform only, 350 ms, and disabled entirely under
+`prefers-reduced-motion`.
+
 ## Data and privacy
 
 - Position and track: [Where the ISS at?](https://wheretheiss.at/w/developer) — public API, no key,
