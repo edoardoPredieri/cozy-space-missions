@@ -104,6 +104,13 @@ Add a block to `window.I18N` in `assets/i18n.js` with the same keys as `en`, the
 `.lang` group in `index.html`. Country names live in `assets/world.js` (`n` is English, `it` the
 Italian name where it differs).
 
+## Deploying
+
+The asset URLs in `index.html` carry a `?v=YYYYMMDD` suffix. **Bump it whenever you change a file
+under `assets/`**, otherwise browsers that already have the page open keep serving the old CSS and
+JS from cache and the deploy looks like it did nothing. GitHub Pages itself updates within a minute
+or two of the push.
+
 ## Local development
 
 ```bash
