@@ -329,7 +329,7 @@
 
   function fmt(n, d) {
     return Number(n).toLocaleString('it-IT', {
-      minimumFractionDigits: d, maximumFractionDigits: d
+      minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: true
     });
   }
 
