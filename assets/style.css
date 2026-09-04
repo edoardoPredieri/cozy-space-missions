@@ -61,7 +61,29 @@ main, .site-head, .site-foot{ position: relative; z-index:1; }
   max-width: var(--maxw);
   margin: 0 auto;
   padding: 26px 22px 8px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
 }
+
+.lang{
+  display:inline-flex; gap: 2px; flex: none;
+  padding: 3px;
+  border: 1px solid rgba(242,232,213,.10);
+  border-radius: 999px;
+  background: rgba(18,27,47,.5);
+}
+.lang button{
+  appearance: none; -webkit-appearance: none;
+  border: 0; background: transparent; cursor: pointer;
+  color: var(--muted);
+  font: 500 11px/1 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .08em;
+  padding: 7px 11px;
+  border-radius: 999px;
+  transition: color .18s ease, background-color .18s ease;
+}
+.lang button:hover{ color: var(--cream-dim); }
+.lang button.is-on{ background: rgba(232,163,74,.16); color: var(--amber-soft); }
+.lang button:focus-visible{ outline: 2px solid var(--amber); outline-offset: 2px; }
 
 .brand{
   display:inline-flex; align-items:center; gap:10px;
@@ -171,7 +193,7 @@ main{
   padding: 5px 12px;
   backdrop-filter: blur(4px);
 }
-.map-legend span{ display:inline-flex; align-items:center; gap:6px; }
+.map-legend > span{ display:inline-flex; align-items:center; gap:6px; }
 .map-legend i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
 .k-iss{ background: var(--amber); box-shadow:0 0 8px rgba(232,163,74,.9); }
 .k-track{ background: rgba(232,163,74,.42); }

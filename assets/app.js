@@ -1,21 +1,72 @@
-/* Cozy Space Missions — posizione live della ISS
-   Dati: https://api.wheretheiss.at (nessuna chiave, CORS aperto)
-   Nessuna dipendenza esterna. */
+/* Cozy Space Missions — live ISS position
+   Data: https://api.wheretheiss.at (no key, open CORS)
+   No external dependencies. */
 
 (function () {
   'use strict';
 
   var ISS_ID = 25544;
   var API = 'https://api.wheretheiss.at/v1/satellites/' + ISS_ID;
-  var REFRESH_MS = 5000;          // posizione
-  var TRACK_MS = 3 * 60 * 1000;   // traccia a terra
+  var REFRESH_MS = 5000;          // position
+  var TRACK_MS = 3 * 60 * 1000;   // ground track
+  var STORE_KEY = 'csm.lang';
   var reduceMotion = window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var $ = function (id) { return document.getElementById(id); };
 
   /* ------------------------------------------------------------------ */
-  /*  Cielo stellato                                                     */
+  /*  Language                                                           */
+  /* ------------------------------------------------------------------ */
+
+  var lang = 'en';
+  try {
+    var saved = localStorage.getItem(STORE_KEY);
+    if (saved && window.I18N[saved]) lang = saved;
+  } catch (e) { /* private mode: keep the default */ }
+
+  function t(key) {
+    var d = window.I18N[lang] || window.I18N.en;
+    return (key in d) ? d[key] : (window.I18N.en[key] || key);
+  }
+
+  function applyLang(code) {
+    if (!window.I18N[code]) return;
+    lang = code;
+    try { localStorage.setItem(STORE_KEY, code); } catch (e) {}
+
+    document.documentElement.lang = t('html.lang');
+    document.title = t('doc.title');
+    var md = document.querySelector('meta[name="description"]');
+    if (md) md.setAttribute('content', t('doc.desc'));
+
+    var nodes = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].innerHTML = t(nodes[i].getAttribute('data-i18n'));
+    }
+    var aria = document.querySelectorAll('[data-i18n-aria-label]');
+    for (var j = 0; j < aria.length; j++) {
+      aria[j].setAttribute('aria-label', t(aria[j].getAttribute('data-i18n-aria-label')));
+    }
+
+    var btns = $('lang').querySelectorAll('button');
+    for (var k = 0; k < btns.length; k++) {
+      var on = btns[k].getAttribute('data-lang') === code;
+      btns[k].setAttribute('aria-pressed', on ? 'true' : 'false');
+      btns[k].classList.toggle('is-on', on);
+    }
+
+    paintStatus();
+    paintStats();
+  }
+
+  $('lang').addEventListener('click', function (ev) {
+    var b = ev.target.closest ? ev.target.closest('button[data-lang]') : null;
+    if (b) applyLang(b.getAttribute('data-lang'));
+  });
+
+  /* ------------------------------------------------------------------ */
+  /*  Starfield                                                          */
   /* ------------------------------------------------------------------ */
 
   (function starfield() {
@@ -48,11 +99,11 @@
       if (reduceMotion) draw(0);
     }
 
-    function draw(t) {
+    function draw(time) {
       ctx.clearRect(0, 0, w, h);
       for (var i = 0; i < stars.length; i++) {
         var s = stars[i];
-        var tw = reduceMotion ? 1 : 0.65 + 0.35 * Math.sin(t * s.sp + s.ph);
+        var tw = reduceMotion ? 1 : 0.65 + 0.35 * Math.sin(time * s.sp + s.ph);
         ctx.globalAlpha = s.a * tw;
         ctx.fillStyle = s.warm ? '#f3c98f' : '#dfe7f5';
         ctx.beginPath();
@@ -69,7 +120,7 @@
   })();
 
   /* ------------------------------------------------------------------ */
-  /*  Mappa                                                              */
+  /*  Map                                                                */
   /* ------------------------------------------------------------------ */
 
   var cv = $('map');
@@ -77,13 +128,12 @@
   var W = 0, H = 0;
 
   var state = {
-    pos: null,       // {latitude, longitude, altitude, velocity, visibility, footprint, solar_lat, solar_lon}
-    track: [],       // [{lat, lon, t}]
-    place: null
+    pos: null,   // {latitude, longitude, altitude, velocity, visibility, footprint, solar_lat, solar_lon}
+    track: []    // [{lat, lon, t}]
   };
 
-  // proiezione equirettangolare: la larghezza copre 360°, l'altezza decide
-  // quanta latitudine resta visibile (la ISS non supera i 51,6°, i poli si tagliano)
+  // Equirectangular projection: the width always covers 360°, the height decides
+  // how much latitude stays visible (the ISS never passes 51.6°, so the poles are cropped).
   var LAT_MAX = 72;
 
   function sizeCanvas() {
@@ -101,7 +151,7 @@
   function px(lon) { return (lon + 180) / 360 * W; }
   function py(lat) { return (LAT_MAX - lat) / (LAT_MAX * 2) * H; }
 
-  /* --- terminatore giorno/notte ------------------------------------- */
+  /* --- day/night terminator ----------------------------------------- */
 
   function nightPath(solarLat, solarLon) {
     var dec = solarLat;
@@ -113,7 +163,7 @@
       var lat = Math.atan(-Math.cos(d) / tanDec) * 180 / Math.PI;
       pts.push([lon, Math.max(-90, Math.min(90, lat))]);
     }
-    // se il sole è a nord, la notte è a sud del terminatore (e viceversa)
+    // sun north of the equator → night lies south of the terminator, and vice versa
     var southIsNight = dec > 0;
     ctx.beginPath();
     ctx.moveTo(px(pts[0][0]), py(pts[0][1]));
@@ -126,11 +176,11 @@
     ctx.closePath();
   }
 
-  /* --- cerchio di visibilità ---------------------------------------- */
+  /* --- visibility circle -------------------------------------------- */
 
   function footprintRing(lat, lon, footprintKm) {
     var R = 6371;
-    var rho = (footprintKm / 2) / R;          // raggio angolare in radianti
+    var rho = (footprintKm / 2) / R;          // angular radius, radians
     var la1 = lat * Math.PI / 180, lo1 = lon * Math.PI / 180;
     var out = [];
     for (var b = 0; b <= 360; b += 4) {
@@ -144,12 +194,12 @@
     return out;
   }
 
-  function strokeWrapped(points, close) {
+  function strokeWrapped(points) {
     ctx.beginPath();
     var started = false, prev = null;
     for (var i = 0; i < points.length; i++) {
       var p = points[i];
-      if (prev && Math.abs(p[0] - prev[0]) > 180) { started = false; }
+      if (prev && Math.abs(p[0] - prev[0]) > 180) started = false;
       if (!started) { ctx.moveTo(px(p[0]), py(p[1])); started = true; }
       else ctx.lineTo(px(p[0]), py(p[1]));
       prev = p;
@@ -157,13 +207,13 @@
     ctx.stroke();
   }
 
-  /* --- disegno ------------------------------------------------------ */
+  /* --- drawing ------------------------------------------------------ */
 
   function render() {
     if (!W) return;
     ctx.clearRect(0, 0, W, H);
 
-    // oceano
+    // ocean
     var g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, '#0c1830');
     g.addColorStop(0.55, '#0e1c34');
@@ -171,7 +221,7 @@
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
 
-    // terre emerse
+    // land
     var world = window.WORLD;
     if (world && world.c) {
       ctx.fillStyle = '#1b2a45';
@@ -196,7 +246,7 @@
       }
     }
 
-    // notte
+    // night
     if (state.pos && state.pos.solar_lat != null) {
       ctx.save();
       nightPath(state.pos.solar_lat, state.pos.solar_lon);
@@ -205,7 +255,7 @@
       ctx.restore();
     }
 
-    // griglia leggera
+    // graticule
     ctx.strokeStyle = 'rgba(242,232,213,.045)';
     ctx.lineWidth = 1;
     for (var lo = -150; lo <= 150; lo += 30) {
@@ -214,11 +264,10 @@
     for (var la = -60; la <= 60; la += 30) {
       ctx.beginPath(); ctx.moveTo(0, py(la)); ctx.lineTo(W, py(la)); ctx.stroke();
     }
-    // equatore
     ctx.strokeStyle = 'rgba(242,232,213,.10)';
     ctx.beginPath(); ctx.moveTo(0, py(0)); ctx.lineTo(W, py(0)); ctx.stroke();
 
-    // traccia a terra
+    // ground track
     if (state.track.length > 1) {
       var now = Date.now() / 1000;
       var past = state.track.filter(function (p) { return p.t <= now; });
@@ -235,7 +284,7 @@
       ctx.setLineDash([]);
     }
 
-    // ISS
+    // the Station
     if (state.pos) {
       var lat = state.pos.latitude, lon = state.pos.longitude;
 
@@ -261,25 +310,24 @@
       ctx.font = '500 11px "IBM Plex Mono", ui-monospace, monospace';
       ctx.fillStyle = 'rgba(255,240,214,.85)';
       ctx.textBaseline = 'middle';
-      var label = 'ISS';
       var lx = x + 13;
       if (lx + 30 > W) { ctx.textAlign = 'right'; lx = x - 13; } else ctx.textAlign = 'left';
-      ctx.fillText(label, lx, y);
+      ctx.fillText('ISS', lx, y);
       ctx.textAlign = 'left';
     }
   }
 
   /* ------------------------------------------------------------------ */
-  /*  Dove si trova (point in polygon offline)                           */
+  /*  Where it is (offline point-in-polygon)                             */
   /* ------------------------------------------------------------------ */
 
   var OCEANS = [
-    { n: 'Oceano Pacifico', lon: [-180, -70], lat: [-60, 66] },
-    { n: 'Oceano Pacifico', lon: [120, 180], lat: [-60, 66] },
-    { n: 'Oceano Atlantico', lon: [-70, 20], lat: [-60, 68] },
-    { n: 'Oceano Indiano', lon: [20, 120], lat: [-60, 30] },
-    { n: 'Oceano Antartico', lon: [-180, 180], lat: [-90, -60] },
-    { n: 'Oceano Artico', lon: [-180, 180], lat: [66, 90] }
+    { k: 'ocean.pacific',  lon: [-180, -70], lat: [-60, 66] },
+    { k: 'ocean.pacific',  lon: [120, 180],  lat: [-60, 66] },
+    { k: 'ocean.atlantic', lon: [-70, 20],   lat: [-60, 68] },
+    { k: 'ocean.indian',   lon: [20, 120],   lat: [-60, 30] },
+    { k: 'ocean.southern', lon: [-180, 180], lat: [-90, -60] },
+    { k: 'ocean.arctic',   lon: [-180, 180], lat: [66, 90] }
   ];
 
   function inRing(lon, lat, ring) {
@@ -296,7 +344,7 @@
     var world = window.WORLD;
     if (world && world.c) {
       for (var c = 0; c < world.c.length; c++) {
-        var polys = world.c[c].p;
+        var country = world.c[c], polys = country.p;
         for (var q = 0; q < polys.length; q++) {
           var rings = polys[q];
           if (inRing(lon, lat, rings[0])) {
@@ -304,7 +352,7 @@
             for (var r = 1; r < rings.length; r++) {
               if (inRing(lon, lat, rings[r])) { hole = true; break; }
             }
-            if (!hole) return { name: world.c[c].n, land: true };
+            if (!hole) return (lang === 'it' && country.it) ? country.it : country.n;
           }
         }
       }
@@ -312,23 +360,33 @@
     for (var o = 0; o < OCEANS.length; o++) {
       var z = OCEANS[o];
       if (lon >= z.lon[0] && lon <= z.lon[1] && lat >= z.lat[0] && lat <= z.lat[1]) {
-        return { name: z.n, land: false };
+        return t(z.k);
       }
     }
-    return { name: 'mare aperto', land: false };
+    return t('ocean.open');
   }
 
   /* ------------------------------------------------------------------ */
-  /*  Dati                                                               */
+  /*  Data                                                               */
   /* ------------------------------------------------------------------ */
 
-  function setStatus(text, isError) {
+  var status = { kind: 'listening', at: null };
+
+  function paintStatus() {
+    var text;
+    if (status.kind === 'updated' && status.at) {
+      text = t('status.updated').replace('{time}', status.at.toLocaleTimeString(t('locale')));
+    } else if (status.kind === 'lost') {
+      text = t('status.lost');
+    } else {
+      text = t('status.listening');
+    }
     $('status-text').textContent = text;
-    $('status').classList.toggle('is-error', !!isError);
+    $('status').classList.toggle('is-error', status.kind === 'lost');
   }
 
   function fmt(n, d) {
-    return Number(n).toLocaleString('it-IT', {
+    return Number(n).toLocaleString(t('locale'), {
       minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: true
     });
   }
@@ -336,14 +394,13 @@
   function paintStats() {
     var p = state.pos;
     if (!p) return;
-    $('v-lat').textContent = fmt(Math.abs(p.latitude), 2) + '° ' + (p.latitude >= 0 ? 'N' : 'S');
-    $('v-lon').textContent = fmt(Math.abs(p.longitude), 2) + '° ' + (p.longitude >= 0 ? 'E' : 'O');
-    $('v-alt').textContent = fmt(p.altitude, 0) + ' km';
-    $('v-vel').textContent = fmt(p.velocity, 0) + ' km/h';
-    $('v-vis').textContent = p.visibility === 'daylight' ? 'alla luce del Sole' : 'nell’ombra della Terra';
-    $('v-foot').textContent = p.footprint ? fmt(p.footprint, 0) + ' km di diametro' : '—';
-
-    $('overhead-place').textContent = placeAt(p.latitude, p.longitude).name;
+    $('v-lat').textContent = fmt(Math.abs(p.latitude), 2) + '° ' + t(p.latitude >= 0 ? 'dir.n' : 'dir.s');
+    $('v-lon').textContent = fmt(Math.abs(p.longitude), 2) + '° ' + t(p.longitude >= 0 ? 'dir.e' : 'dir.w');
+    $('v-alt').textContent = fmt(p.altitude, 0) + ' ' + t('unit.km');
+    $('v-vel').textContent = fmt(p.velocity, 0) + ' ' + t('unit.kmh');
+    $('v-vis').textContent = t(p.visibility === 'daylight' ? 'vis.day' : 'vis.night');
+    $('v-foot').textContent = p.footprint ? fmt(p.footprint, 0) + ' ' + t('unit.across') : '—';
+    $('overhead-place').textContent = placeAt(p.latitude, p.longitude);
   }
 
   function fetchJSON(url) {
@@ -360,13 +417,14 @@
       .then(function (d) {
         state.pos = d;
         failures = 0;
+        status = { kind: 'updated', at: new Date() };
         paintStats();
+        paintStatus();
         render();
-        setStatus('aggiornato alle ' + new Date().toLocaleTimeString('it-IT'));
       })
       .catch(function () {
         failures++;
-        if (failures >= 2) setStatus('connessione persa, riprovo…', true);
+        if (failures >= 2) { status.kind = 'lost'; paintStatus(); }
       });
   }
 
@@ -374,9 +432,9 @@
     var now = Math.floor(Date.now() / 1000);
     var stamps = [];
     for (var m = -55; m <= 55; m += 6) stamps.push(now + m * 60);
-    var a = stamps.slice(0, 10), b = stamps.slice(10);
+    var groups = [stamps.slice(0, 10), stamps.slice(10)];
 
-    var reqs = [a, b].filter(function (g) { return g.length; }).map(function (g) {
+    var reqs = groups.filter(function (g) { return g.length; }).map(function (g) {
       return fetchJSON(API + '/positions?timestamps=' + g.join(',') + '&units=kilometers');
     });
 
@@ -388,17 +446,17 @@
             all.push({ lat: p.latitude, lon: p.longitude, t: p.timestamp });
           });
         });
-        all.sort(function (x, y) { return x.t - y.t; });
+        all.sort(function (a, b) { return a.t - b.t; });
         if (all.length) { state.track = all; render(); }
       })
-      .catch(function () { /* la traccia è un extra: silenzio */ });
+      .catch(function () { /* the track is a bonus: fail quietly */ });
   }
 
   /* ------------------------------------------------------------------ */
 
   window.addEventListener('resize', sizeCanvas, { passive: true });
+  applyLang(lang);
   sizeCanvas();
-  setStatus('in ascolto…');
 
   updatePosition().then(updateTrack);
   setInterval(updatePosition, REFRESH_MS);

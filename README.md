@@ -1,50 +1,63 @@
 # Cozy Space Missions
 
-Una finestra tranquilla sul cielo: dove si trova, adesso, la Stazione Spaziale Internazionale.
+A quiet window on the sky: where the International Space Station is, right now.
 
-**Sito:** https://edoardopredieri.github.io/cozy-space-missions/
+**Live:** https://edoardopredieri.github.io/cozy-space-missions/
 
-Pagina statica, senza framework e senza build. Si apre, guarda in alto, si aggiorna da sola.
+A static page — no framework, no build step. Open it, look up, it keeps itself current.
+English by default, Italian one click away.
 
-## Cosa fa oggi
+## What it does today
 
-- Posizione della ISS in tempo reale su una mappa equirettangolare disegnata su canvas
-- Traccia a terra dell'ultima ora e della prossima
-- Terminatore giorno/notte calcolato dal punto subsolare
-- Cerchio dell'orizzonte visibile (footprint)
-- Paese o oceano sotto la Stazione, calcolato in locale (nessuna chiamata di reverse geocoding)
-- Altitudine, velocità, e se la Stazione è al sole o nell'ombra della Terra
+- Live ISS position on an equirectangular map drawn on canvas
+- Ground track for the past hour and the next one
+- Day/night terminator computed from the subsolar point
+- Visible-horizon circle (footprint)
+- Country or ocean below the Station, resolved locally — no reverse-geocoding call
+- Altitude, speed, and whether the Station is in sunlight or in the Earth's shadow
+- English / Italian switch, remembered between visits
 
-## Struttura
+## Structure
 
 ```
-index.html          pagina unica
-assets/style.css    stile "notte calda / osservatorio"
-assets/app.js       cielo stellato, mappa, dati live
-assets/world.js     confini semplificati, nomi in italiano (~70 KB)
+index.html          single page
+assets/style.css    "warm night / observatory" styling
+assets/app.js       starfield, map, live data, language switching
+assets/i18n.js      all UI strings, English and Italian
+assets/world.js     simplified borders, English + Italian names (~70 KB)
 ```
 
-## Dati
+## Data
 
-- Posizione e traccia: [Where the ISS at?](https://wheretheiss.at/w/developer) — API pubblica, senza chiave, limite ~1 richiesta/secondo. La pagina aggiorna la posizione ogni 5 secondi e la traccia ogni 3 minuti.
-- Confini: [Natural Earth](https://www.naturalearthdata.com/) (dominio pubblico), via [johan/world.geo.json](https://github.com/johan/world.geo.json), semplificati con Douglas–Peucker e tradotti in italiano.
+- Position and track: [Where the ISS at?](https://wheretheiss.at/w/developer) — public API,
+  no key, roughly 1 request/second. The page refreshes the position every 5 seconds and
+  the track every 3 minutes.
+- Borders: [Natural Earth](https://www.naturalearthdata.com/) (public domain), via
+  [johan/world.geo.json](https://github.com/johan/world.geo.json), simplified with
+  Douglas–Peucker.
 
-Nessun cookie, nessun analytics, nessuna dipendenza da CDN a parte i font Google.
+No cookies, no analytics, no CDN dependency other than Google Fonts.
 
-## Sviluppo locale
+## Adding a language
+
+Add a block to `window.I18N` in `assets/i18n.js` with the same keys as `en`, then add a
+button to the `.lang` group in `index.html`. Country names live in `assets/world.js`
+(`n` is English, `it` the Italian name where it differs).
+
+## Local development
 
 ```bash
 python3 -m http.server 8000
-# poi apri http://localhost:8000
+# then open http://localhost:8000
 ```
 
-## Prossime tappe
+## Roadmap
 
-- [x] Mappa live della ISS
-- [ ] Altre missioni: Hubble, Tiangong, Roman, JWST
-- [ ] Inserimento della propria città e previsione dei passaggi visibili (SGP4 su TLE)
-- [ ] App iOS
+- [x] Live ISS map
+- [ ] More missions: Hubble, Tiangong, Roman, JWST
+- [ ] Enter your city and get visible-pass predictions (SGP4 over TLEs)
+- [ ] iOS app
 
-## Licenza
+## Licence
 
-Codice sotto licenza MIT (vedi `LICENSE`). I dati di Natural Earth sono di dominio pubblico.
+Code under the MIT licence (see `LICENSE`). Natural Earth data is public domain.
