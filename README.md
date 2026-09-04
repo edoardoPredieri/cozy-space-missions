@@ -56,6 +56,23 @@ the observer's horizon.
 Planet positions use the JPL approximate Keplerian elements (valid 1800–2050), accurate to a
 fraction of a degree — plenty for a picture of the neighbourhood.
 
+## Visual notes
+
+The palette was cross-checked against the UI/UX Pro Max colour database, whose closest match
+(*Time amber + night indigo on dark*) lands within a few points of the hand-picked tokens.
+Depth follows its glassmorphism spec: 14 px backdrop blur, a 1 px warm border, and a light
+reflection across the top-left of each card.
+
+Two decorative aurora layers drift on `transform` alone (44 s and 58 s, alternating), and a
+faint Earth limb curves along the bottom of the viewport. Both are off under
+`prefers-reduced-motion`, and the composited background luminance behind body copy was measured
+from rendered screenshots — not from the token values — to confirm text still clears 4.5:1 over
+the warm haze.
+
+On the map, the night side is drawn three ways so it never reads by colour alone: a fill, a
+twilight rim along the terminator, and scattered warm city lights on the land that happens to be
+in darkness.
+
 ## Accessibility
 
 Audited against the UI/UX Pro Max rule set. Every text/background pair meets 4.5:1 (verified by

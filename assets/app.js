@@ -189,7 +189,7 @@
 
   /* --- day/night terminator ----------------------------------------- */
 
-  function nightPath(solarLat, solarLon) {
+  function terminatorLine(solarLat, solarLon) {
     var dec = solarLat;
     if (Math.abs(dec) < 0.6) dec = dec >= 0 ? 0.6 : -0.6;
     var tanDec = Math.tan(dec * Math.PI / 180);
@@ -199,8 +199,13 @@
       var lat = Math.atan(-Math.cos(d) / tanDec) * 180 / Math.PI;
       pts.push([lon, Math.max(-90, Math.min(90, lat))]);
     }
+    return pts;
+  }
+
+  function nightPath(solarLat, solarLon) {
+    var pts = terminatorLine(solarLat, solarLon);
     // sun north of the equator → night lies south of the terminator, and vice versa
-    var southIsNight = dec > 0;
+    var southIsNight = solarLat > 0;
     ctx.beginPath();
     ctx.moveTo(px(pts[0][0]), py(pts[0][1]));
     for (var i = 1; i < pts.length; i++) ctx.lineTo(px(pts[i][0]), py(pts[i][1]));
@@ -282,13 +287,43 @@
       }
     }
 
-    // night
+    // night: a fill, a boundary and a texture, so it never reads by colour alone
     if (state.pos && state.pos.solar_lat != null) {
+      var sLat = state.pos.solar_lat, sLon = state.pos.solar_lon;
+
       ctx.save();
-      nightPath(state.pos.solar_lat, state.pos.solar_lon);
+      nightPath(sLat, sLon);
       ctx.fillStyle = 'rgba(4,8,18,.46)';
       ctx.fill();
+
+      // city lights, only where it is dark
+      ctx.clip();
+      var lights = world && world.l;
+      if (lights) {
+        for (var li = 0; li < lights.length; li++) {
+          var L = lights[li];
+          ctx.globalAlpha = 0.16 + L[2] * 0.42;
+          ctx.fillStyle = '#ffcf8e';
+          ctx.beginPath();
+          ctx.arc(px(L[0]), py(L[1]), 0.55 + L[2] * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
       ctx.restore();
+
+      // the terminator itself: a warm twilight rim along the day/night line
+      var line = terminatorLine(sLat, sLon);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(243,201,143,.16)';
+      ctx.lineWidth = 7;
+      ctx.filter = 'blur(3px)';
+      strokeWrapped(line);
+      ctx.restore();
+
+      ctx.strokeStyle = 'rgba(243,201,143,.40)';
+      ctx.lineWidth = 1;
+      strokeWrapped(line);
     }
 
     // graticule

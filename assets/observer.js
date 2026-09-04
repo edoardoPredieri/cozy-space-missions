@@ -348,11 +348,19 @@
     var cx = DW / 2, cy = DH / 2, R = DW / 2 - 22;
     dctx.clearRect(0, 0, DW, DH);
 
-    // the bowl
+    // the bowl: darkest overhead, warming towards the horizon like a real sky
     var g = dctx.createRadialGradient(cx, cy, 0, cx, cy, R);
-    g.addColorStop(0, 'rgba(24,36,62,.85)');
-    g.addColorStop(1, 'rgba(12,19,35,.85)');
+    g.addColorStop(0, 'rgba(16,25,46,.92)');
+    g.addColorStop(0.72, 'rgba(20,31,54,.88)');
+    g.addColorStop(1, 'rgba(38,40,56,.88)');
     dctx.fillStyle = g;
+    dctx.beginPath(); dctx.arc(cx, cy, R, 0, Math.PI * 2); dctx.fill();
+
+    // an amber wash all around the rim, where the sky meets the ground
+    var h = dctx.createRadialGradient(cx, cy, R * 0.52, cx, cy, R);
+    h.addColorStop(0, 'rgba(232,163,74,0)');
+    h.addColorStop(1, 'rgba(232,163,74,.17)');
+    dctx.fillStyle = h;
     dctx.beginPath(); dctx.arc(cx, cy, R, 0, Math.PI * 2); dctx.fill();
 
     // elevation rings at 30° and 60°
