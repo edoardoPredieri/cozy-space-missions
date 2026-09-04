@@ -4,29 +4,55 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cozy Space Missions — where the ISS is right now</title>
-<meta name="description" content="A quiet window on the sky: the International Space Station's live position, with a night map, ground track and the day/night line.">
-<meta name="theme-color" content="#0a1020">
+<meta name="description" content="A quiet window on the sky: the International Space Station's live position, when it passes over you, and where Earth sits among its neighbours.">
+<meta name="theme-color" content="#0a0f1e">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="Cozy Space Missions">
 <meta property="og:description" content="Where the Space Station is, right now. A quiet window on the sky.">
 
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230a1020'/><circle cx='16' cy='16' r='4' fill='%23e8a34a'/><circle cx='16' cy='16' r='9' fill='none' stroke='%23e8a34a' stroke-opacity='.45'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230a0f1e'/><circle cx='16' cy='16' r='4' fill='%23e8a34a'/><circle cx='16' cy='16' r='9' fill='none' stroke='%23e8a34a' stroke-opacity='.45'/></svg>">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-locate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+    <circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7.6"/>
+    <path d="M12 1.6v3M12 19.4v3M22.4 12h-3M4.6 12h-3"/>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+    <circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.4 15.4 21 21"/>
+  </symbol>
+  <symbol id="i-star" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2c.5 4.6 1.8 6.6 5.4 7.6C13.8 10.6 12.5 12.6 12 17c-.5-4.4-1.8-6.4-5.4-7.4C10.2 8.6 11.5 6.6 12 2z"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>
+  </symbol>
+  <symbol id="i-dot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+    <circle cx="12" cy="12" r="5"/>
+  </symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>
+  </symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+    <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>
+  </symbol>
+</svg>
+
 <canvas id="stars" aria-hidden="true"></canvas>
 <div class="glow" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
 
 <header class="site-head">
   <div class="head-left">
     <a class="brand" href="./">
-      <span class="brand-mark" aria-hidden="true">✦</span>
+      <svg class="brand-mark" aria-hidden="true"><use href="#i-star"></use></svg>
       <span class="brand-name">Cozy Space Missions</span>
     </a>
     <p class="brand-sub" data-i18n="brand.sub">A quiet window on the sky</p>
@@ -48,8 +74,10 @@
     </p>
   </section>
 
-  <section class="map-card" aria-labelledby="map-title">
-    <div class="map-card-head">
+  <!-- ---------------- live map ---------------- -->
+
+  <section class="card map-card" aria-labelledby="map-title">
+    <div class="card-head">
       <h2 id="map-title" data-i18n="map.title">Live position</h2>
       <p class="status" id="status" role="status" aria-live="polite">
         <span class="dot" aria-hidden="true"></span><span id="status-text">Listening…</span>
@@ -99,8 +127,133 @@
     </div>
   </section>
 
-  <section class="notes">
-    <h2 data-i18n="notes.title">How to read the map</h2>
+  <!-- ---------------- from where you are ---------------- -->
+
+  <section class="section" id="observer" aria-labelledby="obs-title">
+    <div class="sec-head">
+      <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
+      <h2 id="obs-title" data-i18n="obs.title">From where you are</h2>
+      <p class="sec-sub" data-i18n="obs.sub">Tell the page where you are and it will work out how far the
+      Station is right now, which way to turn, and when it next comes over.</p>
+    </div>
+
+    <div class="card place-card">
+      <form class="place-form" id="place-form" novalidate>
+        <div class="field">
+          <label for="place-input" data-i18n="obs.label">Your street, town or postcode</label>
+          <div class="field-row">
+            <input id="place-input" type="text" autocomplete="street-address" enterkeyhint="search"
+                   data-i18n-placeholder="obs.placeholder" placeholder="Via Roma 1, Bologna"
+                   aria-describedby="place-hint">
+            <button type="submit" class="btn btn-primary" id="place-submit">
+              <svg class="ico" aria-hidden="true"><use href="#i-search"></use></svg>
+              <span data-i18n="obs.search">Search</span>
+            </button>
+          </div>
+          <p class="hint" id="place-hint" data-i18n="obs.hint">Looked up through OpenStreetMap. Your position
+          is kept in this browser and sent nowhere else.</p>
+          <p class="err" id="place-err" role="alert" hidden></p>
+        </div>
+
+        <button type="button" class="btn btn-ghost" id="locate-btn">
+          <svg class="ico" aria-hidden="true"><use href="#i-locate"></use></svg>
+          <span data-i18n="obs.locate">Use my position</span>
+        </button>
+      </form>
+
+      <ul class="place-results" id="place-results" hidden></ul>
+    </div>
+
+    <div class="card obs-panel" id="obs-panel" hidden>
+      <div class="card-head">
+        <div>
+          <h3 class="obs-place" id="obs-place">—</h3>
+          <p class="obs-coords" id="obs-coords"></p>
+        </div>
+        <button type="button" class="btn btn-quiet" id="obs-change" data-i18n="obs.change">Change</button>
+      </div>
+
+      <div class="obs-body">
+        <div class="dome-wrap">
+          <canvas id="dome" role="img" data-i18n-aria-label="obs.dome.alt"
+                  aria-label="Sky dome seen from your position, with the Station's current direction"></canvas>
+          <p class="dome-cap" id="dome-cap" data-i18n="obs.dome.below">Below the horizon right now</p>
+        </div>
+
+        <div class="obs-stats">
+          <div class="stat">
+            <span class="stat-k" data-i18n="obs.distance">Distance from you</span>
+            <span class="stat-v" id="o-dist">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-k" data-i18n="obs.direction">Direction</span>
+            <span class="stat-v" id="o-dir">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-k" data-i18n="obs.elevation">Height above horizon</span>
+            <span class="stat-v" id="o-elev">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-k" data-i18n="obs.ground">Ground distance</span>
+            <span class="stat-v" id="o-ground">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="passes">
+        <div class="passes-head">
+          <h4 data-i18n="pass.title">Next passes overhead</h4>
+          <p class="passes-status" id="pass-status" role="status" aria-live="polite"></p>
+        </div>
+        <ol class="pass-list" id="pass-list"></ol>
+        <p class="hint" id="pass-hint" data-i18n="pass.hint">Computed from the Station's own track over the
+        next twelve hours. A pass marked as visible means it is still in sunlight while your sky is dark.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------- how far is up ---------------- -->
+
+  <section class="section" aria-labelledby="ladder-title">
+    <div class="sec-head">
+      <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
+      <h2 id="ladder-title" data-i18n="ladder.title">How far up is up?</h2>
+      <p class="sec-sub" data-i18n="ladder.sub">Space is not far away — it is just straight up. On this
+      scale each step is ten times the one before.</p>
+    </div>
+
+    <div class="card">
+      <canvas id="ladder" role="img" data-i18n-aria-label="ladder.alt"
+              aria-label="Logarithmic scale from the ground to the Moon, marking the Station's altitude"></canvas>
+      <p class="fig-cap" id="ladder-cap" data-i18n="ladder.cap">The Station orbits closer to you than most
+      capital cities are to each other.</p>
+    </div>
+  </section>
+
+  <!-- ---------------- the neighbourhood ---------------- -->
+
+  <section class="section" aria-labelledby="solar-title">
+    <div class="sec-head">
+      <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
+      <h2 id="solar-title" data-i18n="solar.title">The neighbourhood</h2>
+      <p class="sec-sub" data-i18n="solar.sub">Where the whole thing sits today: the inner planets in their
+      real positions, and our small blue dot with the Station a hair's breadth above it.</p>
+    </div>
+
+    <div class="card solar-card">
+      <canvas id="solar" role="img" data-i18n-aria-label="solar.alt"
+              aria-label="Top-down view of the inner solar system with the current positions of Mercury, Venus, Earth and Mars"></canvas>
+      <ul class="solar-stats" id="solar-stats"></ul>
+    </div>
+  </section>
+
+  <!-- ---------------- notes ---------------- -->
+
+  <section class="section notes">
+    <div class="sec-head">
+      <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
+      <h2 data-i18n="notes.title">How to read the map</h2>
+    </div>
     <div class="note-grid">
       <div class="note">
         <h3 data-i18n="notes.trail.h">The trail</h3>
@@ -120,26 +273,33 @@
     </div>
   </section>
 
-  <section class="roadmap">
-    <h2 data-i18n="road.title">What comes next</h2>
+  <section class="section roadmap">
+    <div class="sec-head">
+      <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
+      <h2 data-i18n="road.title">What comes next</h2>
+    </div>
     <ol class="road">
-      <li class="done"><span data-i18n="road.1">Live ISS map</span></li>
-      <li><span data-i18n="road.2">More missions: Hubble, Tiangong, Roman, JWST</span></li>
-      <li><span data-i18n="road.3">Enter your city and find out when to look up</span></li>
-      <li><span data-i18n="road.4">iOS app</span></li>
+      <li class="done"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="road.1">Live ISS map</span></li>
+      <li class="done"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="road.2">Your position, and when to look up</span></li>
+      <li><svg class="ico" aria-hidden="true"><use href="#i-dot"></use></svg><span data-i18n="road.3">More missions: Hubble, Tiangong, Roman, JWST</span></li>
+      <li><svg class="ico" aria-hidden="true"><use href="#i-dot"></use></svg><span data-i18n="road.4">iOS app</span></li>
     </ol>
   </section>
 
 </main>
 
 <footer class="site-foot">
-  <p data-i18n="foot.sources">Flight data from <a href="https://wheretheiss.at/w/developer" rel="noopener">Where the ISS at?</a>.
-     Borders from Natural Earth. No cookies, no tracking.</p>
+  <p data-i18n="foot.sources">Flight data from <a href="https://wheretheiss.at/w/developer" rel="noopener">Where the ISS at?</a>,
+     address search by <a href="https://openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a>,
+     borders from Natural Earth. No cookies, no tracking.</p>
   <p class="foot-meta" data-i18n="foot.meta">Made slowly · <a href="https://github.com/edoardoPredieri/cozy-space-missions" rel="noopener">source on GitHub</a></p>
 </footer>
 
 <script src="assets/world.js"></script>
 <script src="assets/i18n.js"></script>
+<script src="assets/astro.js"></script>
 <script src="assets/app.js"></script>
+<script src="assets/observer.js"></script>
+<script src="assets/space.js"></script>
 </body>
 </html>

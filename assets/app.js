@@ -16,6 +16,17 @@
   var $ = function (id) { return document.getElementById(id); };
 
   /* ------------------------------------------------------------------ */
+  /*  Tiny shared bus, so observer.js and space.js can follow along      */
+  /* ------------------------------------------------------------------ */
+
+  var listeners = { lang: [], position: [] };
+  function emit(name, payload) {
+    (listeners[name] || []).forEach(function (fn) {
+      try { fn(payload); } catch (e) { /* one bad listener must not stop the rest */ }
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
   /*  Language                                                           */
   /* ------------------------------------------------------------------ */
 
@@ -44,10 +55,12 @@
     for (var i = 0; i < nodes.length; i++) {
       nodes[i].innerHTML = t(nodes[i].getAttribute('data-i18n'));
     }
-    var aria = document.querySelectorAll('[data-i18n-aria-label]');
-    for (var j = 0; j < aria.length; j++) {
-      aria[j].setAttribute('aria-label', t(aria[j].getAttribute('data-i18n-aria-label')));
-    }
+    ['aria-label', 'placeholder', 'title'].forEach(function (attr) {
+      var list = document.querySelectorAll('[data-i18n-' + attr + ']');
+      for (var j = 0; j < list.length; j++) {
+        list[j].setAttribute(attr, t(list[j].getAttribute('data-i18n-' + attr)));
+      }
+    });
 
     var btns = $('lang').querySelectorAll('button');
     for (var k = 0; k < btns.length; k++) {
@@ -58,6 +71,7 @@
 
     paintStatus();
     paintStats();
+    emit('lang', code);
   }
 
   $('lang').addEventListener('click', function (ev) {
@@ -421,6 +435,7 @@
         paintStats();
         paintStatus();
         render();
+        emit('position', d);
       })
       .catch(function () {
         failures++;
@@ -453,6 +468,20 @@
   }
 
   /* ------------------------------------------------------------------ */
+
+  window.CSM = {
+    API: API,
+    t: t,
+    fmt: fmt,
+    fetchJSON: fetchJSON,
+    lang: function () { return lang; },
+    position: function () { return state.pos; },
+    on: function (name, fn) {
+      if (!listeners[name]) listeners[name] = [];
+      listeners[name].push(fn);
+      if (name === 'position' && state.pos) fn(state.pos);
+    }
+  };
 
   window.addEventListener('resize', sizeCanvas, { passive: true });
   applyLang(lang);
