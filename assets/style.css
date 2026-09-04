@@ -1,0 +1,297 @@
+/* Cozy Space Missions — stile "notte calda / osservatorio" */
+
+:root{
+  --ink:        #080d19;
+  --ink-2:      #0d1526;
+  --panel:      rgba(20, 30, 52, 0.55);
+  --panel-line: rgba(232, 163, 74, 0.16);
+  --cream:      #f2e8d5;
+  --cream-dim:  #cdc3b4;
+  --muted:      #8593ab;
+  --amber:      #e8a34a;
+  --amber-soft: #f3c98f;
+  --teal:       #7fb7b0;
+
+  --r-lg: 22px;
+  --r-md: 14px;
+  --maxw: 1080px;
+
+  --shadow: 0 24px 60px -28px rgba(0,0,0,.8);
+}
+
+*{ box-sizing: border-box; }
+
+html{ scroll-behavior: smooth; }
+
+body{
+  margin:0;
+  min-height:100%;
+  background: var(--ink);
+  color: var(--cream);
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ---------- sfondo ---------- */
+
+#stars{
+  position: fixed; inset: 0;
+  width:100%; height:100%;
+  z-index:0;
+  pointer-events:none;
+}
+
+.glow{
+  position: fixed; inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 70% at 50% 108%, rgba(232,163,74,.20), rgba(232,163,74,0) 62%),
+    radial-gradient(90% 60% at 15% -10%, rgba(80,120,190,.18), rgba(80,120,190,0) 60%);
+}
+
+main, .site-head, .site-foot{ position: relative; z-index:1; }
+
+/* ---------- testata ---------- */
+
+.site-head{
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 26px 22px 8px;
+}
+
+.brand{
+  display:inline-flex; align-items:center; gap:10px;
+  text-decoration:none; color: var(--cream);
+}
+.brand-mark{ color: var(--amber); font-size: 15px; transform: translateY(-1px); }
+.brand-name{
+  font-family:"Fraunces", Georgia, serif;
+  font-size: 17px; font-weight:600; letter-spacing:.01em;
+}
+.brand-sub{
+  margin: 4px 0 0 25px;
+  color: var(--muted); font-size: 13.5px;
+}
+
+/* ---------- hero ---------- */
+
+main{
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 22px 10px;
+}
+
+.hero{ padding: 34px 0 30px; max-width: 42ch; }
+
+.hero h1{
+  font-family:"Fraunces", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(2.05rem, 5.4vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  margin: 0 0 18px;
+  text-wrap: balance;
+}
+.hero h1 em{
+  font-style: normal;
+  color: var(--amber-soft);
+}
+
+.lede{
+  margin:0;
+  color: var(--cream-dim);
+  font-size: 1.03rem;
+  max-width: 52ch;
+}
+
+/* ---------- card mappa ---------- */
+
+.map-card{
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: var(--r-lg);
+  padding: 18px 18px 8px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.map-card-head{
+  display:flex; flex-wrap:wrap; gap:10px 18px;
+  align-items: baseline; justify-content: space-between;
+  padding: 2px 4px 14px;
+}
+
+.map-card-head h2{
+  font-family:"Fraunces", Georgia, serif;
+  font-weight: 600; font-size: 1.02rem; letter-spacing:.01em;
+  margin:0; color: var(--cream);
+}
+
+.status{
+  margin:0; display:inline-flex; align-items:center; gap:8px;
+  font-size: 12.5px; color: var(--muted);
+  font-family:"IBM Plex Mono", ui-monospace, monospace;
+}
+.status .dot{
+  width:7px; height:7px; border-radius:50%;
+  background: var(--amber);
+  box-shadow: 0 0 0 0 rgba(232,163,74,.55);
+  animation: pulse 2.6s ease-out infinite;
+}
+.status.is-error .dot{ background:#d8776a; animation:none; }
+
+@keyframes pulse{
+  0%{ box-shadow: 0 0 0 0 rgba(232,163,74,.5); }
+  70%{ box-shadow: 0 0 0 9px rgba(232,163,74,0); }
+  100%{ box-shadow: 0 0 0 0 rgba(232,163,74,0); }
+}
+
+.map-wrap{ position: relative; }
+
+#map{
+  display:block; width:100%; height:auto;
+  aspect-ratio: 2.5 / 1;
+  border-radius: var(--r-md);
+  background: #0b1424;
+}
+
+.map-legend{
+  position:absolute; left:12px; bottom:12px;
+  display:flex; gap:14px; flex-wrap:wrap;
+  font-size: 11px; letter-spacing:.04em; text-transform: uppercase;
+  color: rgba(242,232,213,.62);
+  background: rgba(8,13,25,.55);
+  border: 1px solid rgba(242,232,213,.08);
+  border-radius: 999px;
+  padding: 5px 12px;
+  backdrop-filter: blur(4px);
+}
+.map-legend span{ display:inline-flex; align-items:center; gap:6px; }
+.map-legend i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+.k-iss{ background: var(--amber); box-shadow:0 0 8px rgba(232,163,74,.9); }
+.k-track{ background: rgba(232,163,74,.42); }
+.k-night{ background: rgba(10,16,32,.95); border:1px solid rgba(242,232,213,.25); }
+
+.overhead{
+  margin: 15px 4px 14px;
+  display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+}
+.overhead-k{
+  font-size: 11px; letter-spacing:.09em; text-transform: uppercase;
+  color: var(--muted);
+}
+.overhead strong{
+  color: var(--cream); font-weight:400;
+  font-family:"Fraunces", Georgia, serif;
+  font-size: 1.18rem;
+}
+
+/* ---------- statistiche ---------- */
+
+.stats{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 22px 0 0;
+}
+
+.stat{
+  background: rgba(18,27,47,.5);
+  border: 1px solid rgba(242,232,213,.07);
+  border-radius: var(--r-md);
+  padding: 14px 16px 15px;
+  display:flex; flex-direction:column; gap:5px;
+}
+.stat-wide{ grid-column: span 2; }
+
+.stat-k{
+  font-size: 11px; letter-spacing:.09em; text-transform: uppercase;
+  color: var(--muted);
+}
+.stat-v{
+  font-family:"IBM Plex Mono", ui-monospace, monospace;
+  font-size: 1.12rem; font-weight:500;
+  color: var(--amber-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- note ---------- */
+
+.notes{ padding: 62px 0 8px; }
+.notes h2, .roadmap h2{
+  font-family:"Fraunces", Georgia, serif;
+  font-weight: 400; font-size: 1.5rem; margin: 0 0 22px;
+  color: var(--cream);
+}
+
+.note-grid{
+  display:grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+.note h3{
+  font-family:"Fraunces", Georgia, serif;
+  font-size: 1rem; font-weight:600; margin: 0 0 7px;
+  color: var(--amber-soft);
+}
+.note p{ margin:0; color: var(--cream-dim); font-size: .93rem; }
+
+/* ---------- roadmap ---------- */
+
+.roadmap{ padding: 62px 0 20px; }
+.road{ list-style:none; margin:0; padding:0; display:grid; gap:2px; }
+.road li{
+  display:flex; align-items:center; gap:14px;
+  padding: 13px 2px;
+  border-top: 1px solid rgba(242,232,213,.07);
+  color: var(--muted);
+  font-size: .95rem;
+}
+.road li:last-child{ border-bottom: 1px solid rgba(242,232,213,.07); }
+.road li::before{
+  content:"○"; color: rgba(242,232,213,.25); font-size: 13px;
+}
+.road li.done{ color: var(--cream); }
+.road li.done::before{ content:"●"; color: var(--amber); }
+
+/* ---------- piede ---------- */
+
+.site-foot{
+  max-width: var(--maxw);
+  margin: 60px auto 0;
+  padding: 26px 22px 54px;
+  border-top: 1px solid rgba(242,232,213,.07);
+  color: var(--muted);
+  font-size: .84rem;
+}
+.site-foot p{ margin: 0 0 6px; }
+.site-foot a{ color: var(--cream-dim); text-decoration: none; border-bottom: 1px solid rgba(232,163,74,.35); }
+.site-foot a:hover{ color: var(--amber-soft); }
+.foot-meta{ color: rgba(133,147,171,.7); }
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 860px){
+  .note-grid{ grid-template-columns: 1fr; gap: 22px; }
+}
+
+@media (max-width: 620px){
+  .hero{ padding: 38px 0 30px; }
+  .stats{ grid-template-columns: repeat(2, 1fr); }
+  .stat-wide{ grid-column: span 2; }
+  .map-card{ padding: 14px 12px 6px; border-radius: 18px; }
+  .map-legend{
+    position: static; margin: 10px 2px 0; justify-content: center;
+    font-size: 10px; gap: 12px; padding: 5px 10px; background: transparent; border-color: transparent;
+  }
+  #map{ aspect-ratio: 2.2 / 1; }
+  main, .site-head, .site-foot{ padding-left: 16px; padding-right: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
+  html{ scroll-behavior: auto; }
+}
