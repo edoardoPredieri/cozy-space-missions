@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=5">
+<link rel="stylesheet" href="assets/style.css?v=7">
 </head>
 <body>
 
@@ -243,10 +243,27 @@
     </div>
 
     <div class="card">
-      <canvas id="ladder" role="img" data-i18n-aria-label="ladder.alt"
-              aria-label="Logarithmic scale from the ground to the Moon, marking the Station's altitude"></canvas>
-      <p class="fig-cap" id="ladder-cap" data-i18n="ladder.cap">The Station orbits closer to you than most
-      capital cities are to each other.</p>
+      <canvas id="ladder" class="zoomable" tabindex="0" role="img" data-i18n-aria-label="ladder.alt"
+              aria-label="Logarithmic scale of distances from Earth, from the edge of space out to Neptune"></canvas>
+
+      <div class="zoom" id="ladder-zoom" role="group" data-i18n-aria-label="zoom.group" aria-label="View and zoom">
+        <div class="zoom-presets">
+          <button type="button" data-preset="all" aria-pressed="true" data-i18n="ladder.preset.all">Everything</button>
+          <button type="button" data-preset="moon" aria-pressed="false" data-i18n="ladder.preset.moon">Out to the Moon</button>
+          <button type="button" data-preset="orbit" aria-pressed="false" data-i18n="ladder.preset.orbit">Low orbit</button>
+        </div>
+        <div class="zoom-buttons">
+          <button type="button" data-zoom="out" data-i18n-aria-label="zoom.out" aria-label="Zoom out">−</button>
+          <button type="button" data-zoom="in" data-i18n-aria-label="zoom.in" aria-label="Zoom in">+</button>
+          <span class="zoom-label"></span>
+        </div>
+      </div>
+
+      <p class="fig-cap" data-i18n="ladder.cap">Everything is on the same line, and each step is ten times
+      the one before: the Station sits closer to you than many capitals are to each other, the Moon a
+      thousand times further, Neptune ten thousand times further again.</p>
+      <p class="hint" data-i18n="zoom.hint">Drag to pan, ⌘ or Ctrl with the wheel to zoom, or use the buttons.
+      With the figure focused, the arrow keys pan and + and − zoom.</p>
     </div>
   </section>
 
@@ -260,10 +277,29 @@
       real positions, and our small blue dot with the Station a hair's breadth above it.</p>
     </div>
 
-    <div class="card solar-card">
-      <canvas id="solar" role="img" data-i18n-aria-label="solar.alt"
-              aria-label="Top-down view of the inner solar system with the current positions of Mercury, Venus, Earth and Mars"></canvas>
-      <ul class="solar-stats" id="solar-stats"></ul>
+    <div class="card">
+      <div class="solar-card">
+        <canvas id="solar" class="zoomable" tabindex="0" role="img" data-i18n-aria-label="solar.alt"
+                aria-label="The solar system from above, with the current positions of the Sun and the eight planets"></canvas>
+        <ul class="solar-stats" id="solar-stats"></ul>
+      </div>
+
+      <div class="zoom" id="solar-zoom" role="group" data-i18n-aria-label="zoom.group" aria-label="View and zoom">
+        <div class="zoom-presets">
+          <button type="button" data-preset="all" aria-pressed="true" data-i18n="solar.preset.all">Whole system</button>
+          <button type="button" data-preset="inner" aria-pressed="false" data-i18n="solar.preset.inner">Inner planets</button>
+          <button type="button" data-preset="moon" aria-pressed="false" data-i18n="solar.preset.moon">Earth and the Moon</button>
+          <button type="button" data-preset="station" aria-pressed="false" data-i18n="solar.preset.station">The Station</button>
+        </div>
+        <div class="zoom-buttons">
+          <button type="button" data-zoom="out" data-i18n-aria-label="zoom.out" aria-label="Zoom out">−</button>
+          <button type="button" data-zoom="in" data-i18n-aria-label="zoom.in" aria-label="Zoom in">+</button>
+          <span class="zoom-label"></span>
+        </div>
+      </div>
+
+      <p class="hint" data-i18n="zoom.hint">Drag to pan, ⌘ or Ctrl with the wheel to zoom, or use the buttons.
+      With the figure focused, the arrow keys pan and + and − zoom.</p>
     </div>
   </section>
 
@@ -315,11 +351,11 @@
   <p class="foot-meta" data-i18n="foot.meta">Made slowly · <a href="https://github.com/edoardoPredieri/cozy-space-missions" rel="noopener">source on GitHub</a></p>
 </footer>
 
-<script src="assets/world.js?v=5"></script>
-<script src="assets/i18n.js?v=5"></script>
-<script src="assets/astro.js?v=5"></script>
-<script src="assets/app.js?v=5"></script>
-<script src="assets/observer.js?v=5"></script>
-<script src="assets/space.js?v=5"></script>
+<script src="assets/world.js?v=7"></script>
+<script src="assets/i18n.js?v=7"></script>
+<script src="assets/astro.js?v=7"></script>
+<script src="assets/app.js?v=7"></script>
+<script src="assets/observer.js?v=7"></script>
+<script src="assets/space.js?v=7"></script>
 </body>
 </html>

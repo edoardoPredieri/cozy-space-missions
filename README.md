@@ -20,12 +20,19 @@ Below that, the next passes over the following twelve hours — duration, maximu
 direction it comes from and goes to, and whether it will actually be visible to the naked eye
 (the Station still in sunlight while your sky is already dark).
 
-**How far up is up?** A logarithmic ladder from the ground to the Moon, with the Station's live
-altitude marked among the edge of space, Hubble, GPS and geostationary satellites.
+**How far up is up?** A logarithmic ladder of distances from Earth, from the edge of space out
+past Neptune: the Station's live altitude, Hubble, GPS and geostationary satellites, the Moon,
+the Sun and every planet, all on one line where each step is ten times the one before.
 
-**The neighbourhood.** A top-down view of the inner solar system with Mercury, Venus, Earth and
-Mars in their real positions for today, plus current distances from Earth — and the Station's
-420 km on the same list, for scale.
+**The neighbourhood.** The solar system from above, with the Sun and all eight planets in their
+real positions for today — Saturn with its rings, Jupiter with its bands, Mars with its polar
+cap, all drawn procedurally. Keep zooming past Earth and the Moon's orbit appears, then Earth
+itself as a lit disc with the Station's orbit hugging it.
+
+Both figures zoom. Presets and buttons are the primary controls; a mouse can drag to pan,
+⌘/Ctrl with the wheel (or a trackpad pinch) zooms, and with a figure focused the arrow keys pan
+while `+`, `−` and `0` zoom and reset. Dragging is never the only way to do anything, as
+WCAG 2.2 requires. A scale bar keeps the view honest across six orders of magnitude.
 
 ## Structure
 
@@ -33,10 +40,10 @@ Mars in their real positions for today, plus current distances from Earth — an
 index.html          single page, SVG icon sprite, text marked with data-i18n
 assets/style.css    "warm night / observatory": tokens, grain, cards
 assets/i18n.js      every string, English and Italian
-assets/astro.js     sun position, look angles, track interpolation, planet ephemeris
-assets/app.js       starfield, world map, live data, language switching
+assets/astro.js     sun and moon position, look angles, track interpolation, planet ephemeris
+assets/app.js       starfield, world map, live data, language switching, the shared bus
 assets/observer.js  geocoding, sky dome, pass prediction
-assets/space.js     altitude ladder, inner solar system
+assets/space.js     the zoomable viewer, distance ladder, solar system
 assets/world.js     simplified borders, English + Italian names (~70 KB)
 ```
 
@@ -53,8 +60,10 @@ altitude *h* stays lit until the Sun is `acos(R / (R + h))` below its local hori
 at 420 km. A pass counts as visible when the Station is lit and the Sun is more than 6° below
 the observer's horizon.
 
-Planet positions use the JPL approximate Keplerian elements (valid 1800–2050), accurate to a
-fraction of a degree — plenty for a picture of the neighbourhood.
+Planet positions use the JPL approximate Keplerian elements for all eight planets (valid
+1800–2050), accurate to a fraction of a degree, and a low-precision lunar theory for the Moon —
+plenty for a picture of the neighbourhood. Every position was checked against its known orbital
+range before being trusted.
 
 ## Visual notes
 
