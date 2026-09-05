@@ -456,7 +456,7 @@
       ctx.textBaseline = 'middle';
       var lx = x + 13;
       if (lx + 30 > W) { ctx.textAlign = 'right'; lx = x - 13; } else ctx.textAlign = 'left';
-      ctx.fillText('ISS', lx, y);
+      ctx.fillText(t('sat.short'), lx, y);
       ctx.textAlign = 'left';
     }
   }

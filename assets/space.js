@@ -335,7 +335,7 @@
     var pos = CSM.position();
     var out = [
       { km: 100, key: 'ladder.karman', rank: 7 },
-      { km: pos ? pos.altitude : CSM.sat.altKm, key: 'ladder.iss', rank: 10, hero: true },
+      { km: pos ? pos.altitude : CSM.sat.altKm, key: 'sat.short', rank: 10, hero: true },
       { km: 20200, key: 'ladder.gps', rank: 4 },
       /* the sister mission gets a rung, so each page places the other */
       (CSM.sat.id === 'hubble'
@@ -426,7 +426,7 @@
     var iss = rungs.filter(function (r) { return r.hero; })[0];
     if (iss) {
       c.font = '600 12px "Inter", system-ui, sans-serif';
-      var iw = Math.max(c.measureText(CSM.t('ladder.iss')).width, 54);
+      var iw = Math.max(c.measureText(CSM.t('sat.short')).width, 54);
       place(ladderX(iss.km, W), baseY - 34, iw, 12);
       place(ladderX(iss.km, W), baseY - 20, iw, 12);
     }
@@ -476,7 +476,7 @@
       c.textAlign = ix > W - 60 ? 'right' : (ix < 60 ? 'left' : 'center');
       c.font = '600 12px "Inter", system-ui, sans-serif';
       c.fillStyle = '#f6d9a8';
-      c.fillText(CSM.t('ladder.iss'), ix, baseY - 34);
+      c.fillText(CSM.t('sat.short'), ix, baseY - 34);
       c.font = '400 10.5px "IBM Plex Mono", ui-monospace, monospace';
       c.fillStyle = 'rgba(244,234,216,.7)';
       c.fillText(CSM.fmt(iss.km, 0) + ' km', ix, baseY - 20);
@@ -694,7 +694,7 @@
       c.textAlign = 'center'; c.textBaseline = 'middle';
       c.font = '600 11px "Inter", system-ui, sans-serif';
       c.fillStyle = '#f6d9a8';
-      c.fillText(CSM.t('ladder.iss'), lx, ly2 - 7);
+      c.fillText(CSM.t('sat.short'), lx, ly2 - 7);
       c.font = '400 10px "IBM Plex Mono", ui-monospace, monospace';
       c.fillStyle = 'rgba(244,234,216,.65)';
       c.fillText(CSM.fmt(altKm, 0) + ' km', lx, ly2 + 7);
