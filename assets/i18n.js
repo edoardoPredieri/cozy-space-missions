@@ -141,6 +141,18 @@ window.I18N = {
     'planet.earth': 'Earth',
     'planet.mars': 'Mars',
 
+    /* --- latest news --- */
+    'news.title': 'Latest news',
+    'news.sub': 'What has been happening up there lately, gathered from NASA and the spaceflight press.',
+    'news.hint': "Headlines come from the Spaceflight News API. Each link opens on the publisher's own site, in a new tab.",
+    'news.waiting': 'Scroll a little further and the headlines will load.',
+    'news.loading': 'Looking for the latest…',
+    'news.empty': 'Nothing new about the Station right now.',
+    'news.error': 'The news service did not answer.',
+    'news.fallback': "Read NASA's station blog instead",
+    'news.found': '{n} headlines loaded.',
+    'news.newtab': '(opens in a new tab)',
+
     /* --- notes --- */
     'notes.title': 'How to read the map',
     'notes.trail.h': 'The trail',
@@ -296,6 +308,18 @@ window.I18N = {
     'planet.venus': 'Venere',
     'planet.earth': 'Terra',
     'planet.mars': 'Marte',
+
+    /* --- ultime notizie --- */
+    'news.title': 'Ultime notizie',
+    'news.sub': 'Cosa è successo lassù di recente, raccolto dalla NASA e dalla stampa spaziale.',
+    'news.hint': 'I titoli arrivano dalla Spaceflight News API. Ogni link si apre sul sito dell’editore, in una nuova scheda.',
+    'news.waiting': 'Scorri ancora un poco e i titoli si caricano.',
+    'news.loading': 'Cerco le ultime…',
+    'news.empty': 'Al momento non c’è nulla di nuovo sulla Stazione.',
+    'news.error': 'Il servizio delle notizie non risponde.',
+    'news.fallback': 'Leggi il blog della NASA sulla Stazione',
+    'news.found': '{n} titoli caricati.',
+    'news.newtab': '(si apre in una nuova scheda)',
 
     /* --- note --- */
     'notes.title': 'Come leggere la mappa',

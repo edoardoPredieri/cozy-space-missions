@@ -34,6 +34,13 @@ Both figures zoom. Presets and buttons are the primary controls; a mouse can dra
 while `+`, `−` and `0` zoom and reset. Dragging is never the only way to do anything, as
 WCAG 2.2 requires. A scale bar keeps the view honest across six orders of magnitude.
 
+**Latest news.** Recent headlines about the Station, pulled from the
+[Spaceflight News API](https://api.spaceflightnewsapi.net/) — NASA releases, NASASpaceflight and
+the rest of the spaceflight press — each linking out to the publisher. The request only fires
+once the section is scrolled into view, and every field that comes back is somebody else's text:
+titles go in with `textContent`, never as markup, only `https` links are followed, duplicates are
+dropped, and links carry `rel="noopener noreferrer"`.
+
 ## Structure
 
 ```
@@ -44,6 +51,7 @@ assets/astro.js     sun and moon position, look angles, track interpolation, pla
 assets/app.js       starfield, world map, live data, language switching, the shared bus
 assets/observer.js  geocoding, sky dome, pass prediction
 assets/space.js     the zoomable viewer, distance ladder, solar system
+assets/news.js      latest headlines, fetched lazily and rendered as plain text
 assets/world.js     simplified borders, English + Italian names (~70 KB)
 ```
 

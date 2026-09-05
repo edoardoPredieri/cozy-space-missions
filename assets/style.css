@@ -224,9 +224,11 @@ main{ max-width: var(--maxw); margin: 0 auto; padding: 0 var(--s-3) var(--s-2); 
 .section{ padding: var(--s-6) 0 0; }
 
 .sec-head{ margin: 0 0 var(--s-3); max-width: 58ch; position: relative; }
+.sec-title{ display: flex; align-items: baseline; gap: 11px; }
 .sec-orn{
   width: 14px; height: 14px; color: var(--amber);
-  opacity: .8; display: block; margin: 0 0 10px;
+  opacity: .85; flex: none;
+  transform: translateY(1px);
 }
 .sec-head h2{
   font-family: "Fraunces", Georgia, serif;
@@ -567,6 +569,49 @@ main{ max-width: var(--maxw); margin: 0 auto; padding: 0 var(--s-3) var(--s-2); 
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   color: var(--amber-soft); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
+
+/* ---------- latest news ---------- */
+
+.news-status{
+  margin: 4px 4px 6px;
+  font-size: .92rem; color: var(--muted);
+}
+.news-status a{
+  color: var(--cream-dim); text-decoration: none;
+  border-bottom: 1px solid rgba(232,163,74,.35);
+}
+.news-status a:hover{ color: var(--amber-soft); }
+
+.news-list{ list-style: none; margin: 0; padding: 0; }
+.news-list li{
+  padding: 15px 4px 16px;
+  border-top: 1px solid var(--line);
+}
+.news-list li:first-child{ border-top: 0; padding-top: 4px; }
+
+.news-link{
+  display: inline-flex; align-items: baseline; gap: 9px;
+  text-decoration: none; color: var(--cream);
+  /* grows the hit area past 24px without shifting the layout */
+  padding-block: 4px; margin-block: -4px;
+  transition: color .18s var(--ease);
+}
+.news-link:hover{ color: var(--amber-soft); }
+.news-title{
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 400; font-size: 1.04rem; line-height: 1.35;
+  text-wrap: pretty;
+}
+.news-ico{ width: 13px; height: 13px; flex: none; opacity: .55; transform: translateY(1px); }
+.news-link:hover .news-ico{ opacity: 1; }
+
+.news-meta{
+  margin: 5px 0 0;
+  font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--muted);
+}
+.news-meta .sep{ padding: 0 7px; opacity: .6; }
+.news-site{ color: var(--cream-dim); }
 
 /* ---------- notes & roadmap ---------- */
 

@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=7">
+<link rel="stylesheet" href="assets/style.css?v=8">
 </head>
 <body>
 
@@ -42,6 +42,9 @@
   </symbol>
   <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
     <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>
+  </symbol>
+  <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 4h6v6M20 4l-8.5 8.5"/><path d="M18 14.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4.5"/>
   </symbol>
 </svg>
 
@@ -148,8 +151,10 @@
 
   <section class="reveal section" id="observer" aria-labelledby="obs-title">
     <div class="sec-head">
-      <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
-      <h2 id="obs-title" data-i18n="obs.title">From where you are</h2>
+      <div class="sec-title">
+        <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
+        <h2 id="obs-title" data-i18n="obs.title">From where you are</h2>
+      </div>
       <p class="sec-sub" data-i18n="obs.sub">Tell the page where you are and it will work out how far the
       Station is right now, which way to turn, and when it next comes over.</p>
     </div>
@@ -236,8 +241,10 @@
 
   <section class="reveal section" aria-labelledby="ladder-title">
     <div class="sec-head">
-      <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
-      <h2 id="ladder-title" data-i18n="ladder.title">How far up is up?</h2>
+      <div class="sec-title">
+        <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
+        <h2 id="ladder-title" data-i18n="ladder.title">How far up is up?</h2>
+      </div>
       <p class="sec-sub" data-i18n="ladder.sub">Space is not far away — it is just straight up. On this
       scale each step is ten times the one before.</p>
     </div>
@@ -271,8 +278,10 @@
 
   <section class="reveal section" aria-labelledby="solar-title">
     <div class="sec-head">
-      <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
-      <h2 id="solar-title" data-i18n="solar.title">The neighbourhood</h2>
+      <div class="sec-title">
+        <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
+        <h2 id="solar-title" data-i18n="solar.title">The neighbourhood</h2>
+      </div>
       <p class="sec-sub" data-i18n="solar.sub">Where the whole thing sits today: the inner planets in their
       real positions, and our small blue dot with the Station a hair's breadth above it.</p>
     </div>
@@ -303,12 +312,34 @@
     </div>
   </section>
 
+  <!-- ---------------- latest news ---------------- -->
+
+  <section class="reveal section" id="news" aria-labelledby="news-title">
+    <div class="sec-head">
+      <div class="sec-title">
+        <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
+        <h2 id="news-title" data-i18n="news.title">Latest news</h2>
+      </div>
+      <p class="sec-sub" data-i18n="news.sub">What has been happening up there lately, gathered from NASA
+      and the spaceflight press.</p>
+    </div>
+
+    <div class="card">
+      <p class="news-status" id="news-status" data-i18n="news.loading">Looking for the latest…</p>
+      <ol class="news-list" id="news-list"></ol>
+      <p class="hint" data-i18n="news.hint">Headlines come from the Spaceflight News API. Each link opens on
+      the publisher's own site, in a new tab.</p>
+    </div>
+  </section>
+
   <!-- ---------------- notes ---------------- -->
 
   <section class="reveal section notes">
     <div class="sec-head">
-      <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
-      <h2 data-i18n="notes.title">How to read the map</h2>
+      <div class="sec-title">
+        <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
+        <h2 data-i18n="notes.title">How to read the map</h2>
+      </div>
     </div>
     <div class="note-grid">
       <div class="note">
@@ -331,8 +362,10 @@
 
   <section class="reveal section roadmap">
     <div class="sec-head">
-      <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
-      <h2 data-i18n="road.title">What comes next</h2>
+      <div class="sec-title">
+        <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
+        <h2 data-i18n="road.title">What comes next</h2>
+      </div>
     </div>
     <ol class="road">
       <li class="done"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="road.1">Live ISS map</span></li>
@@ -351,11 +384,12 @@
   <p class="foot-meta" data-i18n="foot.meta">Made slowly · <a href="https://github.com/edoardoPredieri/cozy-space-missions" rel="noopener">source on GitHub</a></p>
 </footer>
 
-<script src="assets/world.js?v=7"></script>
-<script src="assets/i18n.js?v=7"></script>
-<script src="assets/astro.js?v=7"></script>
-<script src="assets/app.js?v=7"></script>
-<script src="assets/observer.js?v=7"></script>
-<script src="assets/space.js?v=7"></script>
+<script src="assets/world.js?v=8"></script>
+<script src="assets/i18n.js?v=8"></script>
+<script src="assets/astro.js?v=8"></script>
+<script src="assets/app.js?v=8"></script>
+<script src="assets/observer.js?v=8"></script>
+<script src="assets/space.js?v=8"></script>
+<script src="assets/news.js?v=8"></script>
 </body>
 </html>
