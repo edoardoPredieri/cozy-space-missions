@@ -23,6 +23,8 @@ window.I18N = {
     'legend.iss': 'ISS',
     'legend.track': 'ground track',
     'legend.night': 'night',
+    'legend.you': 'you',
+    'map.you': 'you',
     'overhead.label': 'Point below the Station',
 
     'stats.group': 'Flight data',
@@ -158,6 +160,8 @@ window.I18N = {
     'legend.iss': 'ISS',
     'legend.track': 'traccia a terra',
     'legend.night': 'notte',
+    'legend.you': 'tu',
+    'map.you': 'tu',
     'overhead.label': 'Punto sotto la Stazione',
 
     'stats.group': 'Dati di volo',

@@ -392,15 +392,14 @@
 
     // the next pass, traced across the bowl
     var next = passes && passes.length ? passes[0] : null;
-    if (next && next.samples) {
+    if (next && next.samples && next.samples.length > 1) {
       dctx.strokeStyle = 'rgba(232,163,74,.28)';
       dctx.lineWidth = 1.4;
       dctx.setLineDash([3, 4]);
       dctx.beginPath();
-      next.samples.forEach(function (s, i) {
-        var p = domePoint(s.az, s.el, R, cx, cy);
-        if (i === 0) dctx.moveTo(p[0], p[1]); else dctx.lineTo(p[0], p[1]);
-      });
+      CSM.smoothPath(dctx, next.samples.map(function (s) {
+        return domePoint(s.az, s.el, R, cx, cy);
+      }));
       dctx.stroke();
       dctx.setLineDash([]);
     }
@@ -472,6 +471,7 @@
   function setPlace(p) {
     place = p;
     savePlace();
+    CSM.emit('place', p);
     clearError();
     paintPanel();
     sizeDome();
@@ -487,6 +487,7 @@
     place = null;
     passes = null;
     savePlace();
+    CSM.emit('place', null);
     paintPanel();
     $('place-input').focus();
   }
@@ -516,5 +517,5 @@
 
   paintPanel();
   sizeDome();
-  if (place) loadPasses(false);
+  if (place) { CSM.emit('place', place); loadPasses(false); }
 })();

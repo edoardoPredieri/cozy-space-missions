@@ -286,6 +286,8 @@ main{ max-width: var(--maxw); margin: 0 auto; padding: 0 var(--s-3) var(--s-2); 
 .k-iss{ background: var(--amber); box-shadow: 0 0 8px rgba(232,163,74,.9); }
 .k-track{ background: rgba(232,163,74,.42); }
 .k-night{ background: rgba(10,16,32,.95); border: 1px solid rgba(244,234,216,.28); }
+.k-you{ background: #d6f0eb; box-shadow: 0 0 8px rgba(141,189,180,.9); }
+.map-legend > span[hidden]{ display: none !important; }
 
 .overhead{
   margin: var(--s-2) 4px var(--s-2);

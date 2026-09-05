@@ -19,7 +19,7 @@
   /*  Tiny shared bus, so observer.js and space.js can follow along      */
   /* ------------------------------------------------------------------ */
 
-  var listeners = { lang: [], position: [] };
+  var listeners = { lang: [], position: [], place: [] };
   var resizeFns = [];
   var resizePending = false;
 
@@ -164,9 +164,25 @@
   var W = 0, H = 0;
 
   var state = {
-    pos: null,   // {latitude, longitude, altitude, velocity, visibility, footprint, solar_lat, solar_lon}
-    track: []    // [{lat, lon, t}]
+    pos: null,    // {latitude, longitude, altitude, velocity, visibility, footprint, solar_lat, solar_lon}
+    track: [],    // [{lat, lon, t}] as the API returns it, six minutes apart
+    dense: [],    // the same path resampled every 30s on the sphere, for drawing
+    place: null   // the observer, once they have told us where they are
   };
+
+  /* The API hands back a point every few minutes. Drawing straight lines between
+     those would put a visible kink at each one, so the path is resampled along
+     the sphere first and only then drawn. */
+  function densify(track, stepSec) {
+    if (track.length < 2) return track.slice();
+    var out = [];
+    var t0 = track[0].t, t1 = track[track.length - 1].t;
+    for (var t = t0; t <= t1; t += stepSec) {
+      var s = window.ASTRO.interpolateTrack(track, t);
+      if (s) out.push(s);
+    }
+    return out;
+  }
 
   // Equirectangular projection: the width always covers 360°, the height decides
   // how much latitude stays visible (the ISS never passes 51.6°, so the poles are cropped).
@@ -224,7 +240,7 @@
     var rho = (footprintKm / 2) / R;          // angular radius, radians
     var la1 = lat * Math.PI / 180, lo1 = lon * Math.PI / 180;
     var out = [];
-    for (var b = 0; b <= 360; b += 4) {
+    for (var b = 0; b <= 360; b += 6) {
       var br = b * Math.PI / 180;
       var la2 = Math.asin(Math.sin(la1) * Math.cos(rho) +
                           Math.cos(la1) * Math.sin(rho) * Math.cos(br));
@@ -235,16 +251,40 @@
     return out;
   }
 
+  /* Catmull-Rom through the points, emitted as cubic Béziers: the path keeps a
+     continuous tangent at every sample, so no corner ever shows. */
+  function smoothPath(c, pts) {
+    var n = pts.length;
+    if (n < 2) return;
+    c.moveTo(pts[0][0], pts[0][1]);
+    if (n === 2) { c.lineTo(pts[1][0], pts[1][1]); return; }
+    for (var i = 0; i < n - 1; i++) {
+      var p0 = pts[i > 0 ? i - 1 : 0];
+      var p1 = pts[i];
+      var p2 = pts[i + 1];
+      var p3 = pts[i + 2 < n ? i + 2 : n - 1];
+      c.bezierCurveTo(
+        p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6,
+        p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6,
+        p2[0], p2[1]
+      );
+    }
+  }
+
+  /* Splits a lon/lat path where it crosses the antimeridian, then draws each
+     run as one smooth curve. */
   function strokeWrapped(points) {
-    ctx.beginPath();
-    var started = false, prev = null;
+    var runs = [], run = [], prev = null;
     for (var i = 0; i < points.length; i++) {
       var p = points[i];
-      if (prev && Math.abs(p[0] - prev[0]) > 180) started = false;
-      if (!started) { ctx.moveTo(px(p[0]), py(p[1])); started = true; }
-      else ctx.lineTo(px(p[0]), py(p[1]));
+      if (prev && Math.abs(p[0] - prev[0]) > 180) { runs.push(run); run = []; }
+      run.push([px(p[0]), py(p[1])]);
       prev = p;
     }
+    if (run.length) runs.push(run);
+
+    ctx.beginPath();
+    for (var r = 0; r < runs.length; r++) smoothPath(ctx, runs[r]);
     ctx.stroke();
   }
 
@@ -339,10 +379,10 @@
     ctx.beginPath(); ctx.moveTo(0, py(0)); ctx.lineTo(W, py(0)); ctx.stroke();
 
     // ground track
-    if (state.track.length > 1) {
+    if (state.dense.length > 1) {
       var now = Date.now() / 1000;
-      var past = state.track.filter(function (p) { return p.t <= now; });
-      var next = state.track.filter(function (p) { return p.t >= now; });
+      var past = state.dense.filter(function (p) { return p.t <= now; });
+      var next = state.dense.filter(function (p) { return p.t >= now; });
 
       ctx.lineWidth = 1.6;
       ctx.setLineDash([]);
@@ -353,6 +393,31 @@
       ctx.strokeStyle = 'rgba(232,163,74,.30)';
       strokeWrapped(next.map(function (p) { return [p.lon, p.lat]; }));
       ctx.setLineDash([]);
+    }
+
+    // where the reader is, once they have said
+    if (state.place) {
+      var ox = px(state.place.lon), oy = py(state.place.lat);
+
+      var halo = ctx.createRadialGradient(ox, oy, 0, ox, oy, 15);
+      halo.addColorStop(0, 'rgba(141,189,180,.42)');
+      halo.addColorStop(1, 'rgba(141,189,180,0)');
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.arc(ox, oy, 15, 0, Math.PI * 2); ctx.fill();
+
+      ctx.strokeStyle = 'rgba(214,240,235,.95)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(ox, oy, 4.5, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(214,240,235,.95)';
+      ctx.beginPath(); ctx.arc(ox, oy, 1.6, 0, Math.PI * 2); ctx.fill();
+
+      ctx.font = '500 10.5px "IBM Plex Mono", ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(214,240,235,.85)';
+      ctx.textBaseline = 'middle';
+      var olx = ox + 10;
+      if (olx + 34 > W) { ctx.textAlign = 'right'; olx = ox - 10; } else ctx.textAlign = 'left';
+      ctx.fillText(t('map.you'), olx, oy);
+      ctx.textAlign = 'left';
     }
 
     // the Station
@@ -523,7 +588,11 @@
           });
         });
         all.sort(function (a, b) { return a.t - b.t; });
-        if (all.length) { state.track = all; render(); }
+        if (all.length) {
+          state.track = all;
+          state.dense = densify(all, 30);
+          render();
+        }
       })
       .catch(function () { /* the track is a bonus: fail quietly */ });
   }
@@ -537,6 +606,8 @@
     fetchJSON: fetchJSON,
     announce: announce,
     onResize: onResize,
+    emit: emit,
+    smoothPath: smoothPath,
     lang: function () { return lang; },
     position: function () { return state.pos; },
     on: function (name, fn) {
@@ -545,6 +616,13 @@
       if (name === 'position' && state.pos) fn(state.pos);
     }
   };
+
+  listeners.place.push(function (p) {
+    state.place = p;
+    var chip = $('legend-you');
+    if (chip) chip.hidden = !p;
+    render();
+  });
 
   onResize(sizeCanvas);
   applyLang(lang);
