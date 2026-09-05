@@ -148,6 +148,33 @@ main, .site-head, .site-foot{ position: relative; z-index: 1; }
 }
 .brand-sub{ margin: 3px 0 0 24px; color: var(--muted); font-size: 13.5px; }
 
+.head-right{
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap; justify-content: flex-end;
+}
+
+.missions{
+  display: inline-flex; gap: 2px; flex: none;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  box-shadow: var(--inset);
+}
+.missions a{
+  display: inline-flex; align-items: center;
+  min-height: 32px; padding: 0 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--muted);
+  font: 500 12px/1 "Inter", system-ui, sans-serif;
+  white-space: nowrap;
+  touch-action: manipulation;
+  transition: color .2s var(--ease), background-color .2s var(--ease);
+}
+.missions a:hover{ color: var(--cream-dim); }
+.missions a.is-on{ background: rgba(232,163,74,.16); color: var(--amber-soft); }
+
 .lang{
   display: inline-flex; gap: 2px; flex: none;
   padding: 3px;
@@ -661,7 +688,7 @@ a:focus-visible, button:focus-visible, input:focus-visible{
 /* ---------- responsive ---------- */
 
 @media (pointer: coarse){
-  .btn, .lang button, .zoom-presets button{ min-height: 44px; }
+  .btn, .lang button, .zoom-presets button, .missions a{ min-height: 44px; }
   .zoom-buttons button{ width: 44px; height: 44px; }
   .btn-quiet{ min-height: 40px; }
   .field input[type="text"]{ min-height: 46px; }
@@ -681,6 +708,8 @@ a:focus-visible, button:focus-visible, input:focus-visible{
 
 @media (max-width: 620px){
   :root{ --s-5: 40px; --s-6: 56px; }
+  .site-head{ flex-wrap: wrap; }
+  .head-right{ width: 100%; justify-content: flex-start; }
   .hero{ padding: var(--s-3) 0 var(--s-3); }
   .stats, .obs-stats{ grid-template-columns: repeat(2, 1fr); }
   .stat-wide{ grid-column: span 2; }

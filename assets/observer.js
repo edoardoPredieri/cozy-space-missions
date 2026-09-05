@@ -14,7 +14,7 @@
   var PASS_HOURS = 12;
   var PASS_STEP_MIN = 6;      // sampling step asked of the API
   var PASS_FINE_SEC = 20;     // resolution we interpolate to, locally
-  var MIN_ELEVATION = 10;     // degrees: below this a pass is not worth the walk outside
+  var MIN_ELEVATION = CSM.sat.minElevation || 10;   // below this, not worth going outside
   var TWILIGHT = -6;          // sun elevation under which your sky is dark enough
   var REQUEST_GAP_MS = 1300;  // the API asks for about one call a second
   var PASS_TTL_MS = 20 * 60 * 1000;
@@ -184,13 +184,11 @@
     });
   }
 
-  function findPasses(samples, lat, lon) {
-    if (samples.length < 4) return [];
-    var t0 = samples[0].t, t1 = samples[samples.length - 1].t;
+  function findPasses(sampleAt, t0, t1, lat, lon) {
     var out = [], current = null;
 
     for (var t = t0; t <= t1; t += PASS_FINE_SEC) {
-      var s = A.interpolateTrack(samples, t);
+      var s = sampleAt(t);
       if (!s) continue;
       var look = A.lookAngles(lat, lon, s.lat, s.lon, s.alt);
 
@@ -228,6 +226,25 @@
     if (!place || passesBusy) return;
     if (!force && passes && Date.now() - passesAt < PASS_TTL_MS) { paintPasses(); return; }
 
+    /* With the orbit in hand there is nothing to wait for: twelve hours of
+       passes are a couple of thousand SGP4 evaluations, done in a blink. */
+    var prop = CSM.propagator && CSM.propagator();
+    if (prop) {
+      var now = Math.floor(Date.now() / 1000);
+      passes = findPasses(function (t) {
+        var p = prop.at(new Date(t * 1000));
+        return p ? { lat: p.latitude, lon: p.longitude, alt: p.altitude } : null;
+      }, now, now + PASS_HOURS * 3600, place.lat, place.lon);
+      passesAt = Date.now();
+      $('pass-progress').hidden = true;
+      paintPasses();
+      paintDome();
+      CSM.announce(passes.length
+        ? CSM.t('pass.found').replace('{n}', passes.length)
+        : CSM.t('pass.none'));
+      return;
+    }
+
     passesBusy = true;
     passes = null;
     $('pass-list').innerHTML = '';
@@ -248,7 +265,9 @@
         passesBusy = false;
         $('pass-progress').hidden = true;
         if (place !== here) return;             // the user moved on
-        passes = findPasses(samples, here.lat, here.lon);
+        passes = findPasses(function (t) { return A.interpolateTrack(samples, t); },
+                            samples[0].t, samples[samples.length - 1].t,
+                            here.lat, here.lon);
         passesAt = Date.now();
         paintPasses();
         paintDome();
@@ -357,9 +376,9 @@
     dctx.beginPath(); dctx.arc(cx, cy, R, 0, Math.PI * 2); dctx.fill();
 
     // an amber wash all around the rim, where the sky meets the ground
-    var h = dctx.createRadialGradient(cx, cy, R * 0.52, cx, cy, R);
+    var h = dctx.createRadialGradient(cx, cy, R * 0.68, cx, cy, R);
     h.addColorStop(0, 'rgba(232,163,74,0)');
-    h.addColorStop(1, 'rgba(232,163,74,.17)');
+    h.addColorStop(1, 'rgba(232,163,74,.10)');
     dctx.fillStyle = h;
     dctx.beginPath(); dctx.arc(cx, cy, R, 0, Math.PI * 2); dctx.fill();
 
@@ -437,6 +456,33 @@
   /*  Panel                                                              */
   /* ------------------------------------------------------------------ */
 
+  /* A satellite whose orbit is tilted 28.5° can never climb far above the
+     horizon from 45° north. That is worth saying out loud rather than leaving
+     the reader to wonder why every pass is so low. */
+  function ceilingFrom(lat) {
+    var prop = CSM.propagator && CSM.propagator();
+    var inc = prop ? prop.inclination : CSM.sat.inclination;
+    if (!inc) return null;
+    var alt = (CSM.position() || {}).altitude || CSM.sat.altKm;
+    var gap = Math.abs(lat) - inc;
+    if (gap <= 0) return 90;
+    var g = gap * Math.PI / 180;
+    var R = A.R_EARTH;
+    var el = Math.atan2(Math.cos(g) - R / (R + alt), Math.sin(g)) * 180 / Math.PI;
+    return Math.max(0, el);
+  }
+
+  function paintCeiling() {
+    var el = $('pass-ceiling');
+    if (!el || !place) return;
+    var max = ceilingFrom(place.lat);
+    if (max === null || max >= 25) { el.hidden = true; return; }
+    el.hidden = false;
+    el.textContent = max < 1
+      ? CSM.t('pass.never')
+      : CSM.t('pass.ceiling').replace('{deg}', CSM.fmt(max, 0));
+  }
+
   function coordLabel(lat, lon) {
     return CSM.fmt(Math.abs(lat), 3) + '° ' + CSM.t(lat >= 0 ? 'dir.n' : 'dir.s') + '  ' +
            CSM.fmt(Math.abs(lon), 3) + '° ' + CSM.t(lon >= 0 ? 'dir.e' : 'dir.w');
@@ -465,6 +511,7 @@
       : CSM.t('obs.under');
     $('o-ground').textContent = CSM.fmt(ground, 0) + ' ' + CSM.t('unit.km');
 
+    paintCeiling();
     paintDome();
   }
 
@@ -511,6 +558,12 @@
     if (place && !place.label) $('obs-place').textContent = CSM.t('obs.you');
     paintPanel();
     paintPasses();
+  });
+
+  /* The elements arrive after the page does, so the passes wait for them. */
+  CSM.on('propagator', function () {
+    paintCeiling();
+    if (place) loadPasses(true);
   });
 
   CSM.onResize(sizeDome);

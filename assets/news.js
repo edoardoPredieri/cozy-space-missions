@@ -11,9 +11,8 @@
   var CSM = window.CSM;
   var $ = function (id) { return document.getElementById(id); };
 
-  var FEED = 'https://api.spaceflightnewsapi.net/v4/articles/' +
-             '?search=International%20Space%20Station&limit=6&ordering=-published_at';
-  var FALLBACK = 'https://blogs.nasa.gov/spacestation/';
+  var FEED = 'https://api.spaceflightnewsapi.net/v4/articles/?search=' +
+             encodeURIComponent(CSM.sat.news) + '&limit=6&ordering=-published_at';
 
   var articles = null;
   var loading = false;
@@ -56,7 +55,7 @@
       status.textContent = '';
       status.appendChild(document.createTextNode(CSM.t('news.error') + ' '));
       var a = document.createElement('a');
-      a.href = FALLBACK;
+      a.href = CSM.t('news.fallbackUrl');
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
       a.textContent = CSM.t('news.fallback');

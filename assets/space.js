@@ -335,9 +335,12 @@
     var pos = CSM.position();
     var out = [
       { km: 100, key: 'ladder.karman', rank: 7 },
-      { km: pos ? pos.altitude : 420, key: 'ladder.iss', rank: 10, hero: true },
-      { km: 535, key: 'ladder.hubble', rank: 4 },
+      { km: pos ? pos.altitude : CSM.sat.altKm, key: 'ladder.iss', rank: 10, hero: true },
       { km: 20200, key: 'ladder.gps', rank: 4 },
+      /* the sister mission gets a rung, so each page places the other */
+      (CSM.sat.id === 'hubble'
+        ? { km: 420, key: 'ladder.station', rank: 5.8 }
+        : { km: 476, key: 'ladder.hubble', rank: 4 }),
       { km: 35786, key: 'ladder.geo', rank: 6 },
       { km: A.moon(now).distance, key: 'ladder.moon', rank: 9 },
       { km: Math.hypot(p.earth.x, p.earth.y, p.earth.z) * AU, key: 'planet.sun', rank: 8 }
@@ -662,7 +665,7 @@
       var ep = p.earth;
       var ex = X(ep.x), ey = Y(ep.y);
       var pos = CSM.position();
-      var altKm = pos ? pos.altitude : 420;
+      var altKm = pos ? pos.altitude : CSM.sat.altKm;
       var issR = ((R_EARTH + altKm) / AU) * scale;
 
       c.strokeStyle = 'rgba(232,163,74,.34)';
@@ -742,7 +745,7 @@
     });
     rows.push({ color: '#cfd3dc', label: CSM.t('planet.moon'), km: A.moon(now).distance });
     var pos = CSM.position();
-    rows.push({ color: '#e8a34a', label: CSM.t('solar.iss'), km: pos ? pos.altitude : 420 });
+    rows.push({ color: '#e8a34a', label: CSM.t('solar.iss'), km: pos ? pos.altitude : CSM.sat.altKm });
 
     rows.forEach(function (r) {
       var li = document.createElement('li');

@@ -5,11 +5,12 @@
 (function () {
   'use strict';
 
-  var ISS_ID = 25544;
-  var API = 'https://api.wheretheiss.at/v1/satellites/' + ISS_ID;
+  var SAT = window.CSM_SAT;
+  var API = 'https://api.wheretheiss.at/v1/satellites/' + SAT.norad;
   var REFRESH_MS = 5000;          // position
-  var TRACK_MS = 3 * 60 * 1000;   // ground track
+  var TRACK_MS = 3 * 60 * 1000;   // ground track, when it has to be fetched
   var STORE_KEY = 'csm.lang';
+  var propagator = null;          // set once the orbital elements are in, for TLE missions
   var reduceMotion = window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -19,7 +20,7 @@
   /*  Tiny shared bus, so observer.js and space.js can follow along      */
   /* ------------------------------------------------------------------ */
 
-  var listeners = { lang: [], position: [], place: [] };
+  var listeners = { lang: [], position: [], place: [], propagator: [] };
   var resizeFns = [];
   var resizePending = false;
 
@@ -58,9 +59,16 @@
     if (saved && window.I18N[saved]) lang = saved;
   } catch (e) { /* private mode: keep the default */ }
 
+  /* Most strings are shared; a mission can override any of them with a
+     "<mission>." prefix, so only the copy that actually differs is duplicated. */
   function t(key) {
     var d = window.I18N[lang] || window.I18N.en;
-    return (key in d) ? d[key] : (window.I18N.en[key] || key);
+    var en = window.I18N.en;
+    var scoped = SAT.id + '.' + key;
+    if (scoped in d) return d[scoped];
+    if (scoped in en) return en[scoped];
+    if (key in d) return d[key];
+    return (key in en) ? en[key] : key;
   }
 
   function applyLang(code) {
@@ -514,11 +522,15 @@
       text = t('status.updated').replace('{time}', status.at.toLocaleTimeString(t('locale')));
     } else if (status.kind === 'lost') {
       text = t('status.lost');
+    } else if (status.kind === 'elements') {
+      text = t('status.elements');
+    } else if (status.kind === 'noElements') {
+      text = t('status.noElements');
     } else {
       text = t('status.listening');
     }
     $('status-text').textContent = text;
-    $('status').classList.toggle('is-error', status.kind === 'lost');
+    $('status').classList.toggle('is-error', status.kind === 'lost' || status.kind === 'noElements');
   }
 
   function fmt(n, d) {
@@ -548,29 +560,48 @@
 
   var failures = 0;
 
+  function accept(d) {
+    state.pos = d;
+    failures = 0;
+    status = { kind: 'updated', at: new Date() };
+    paintStats();
+    paintStatus();
+    render();
+    emit('position', d);
+  }
+
+  function lost() {
+    failures++;
+    if (failures === 2) {
+      status.kind = 'lost';
+      paintStatus();
+      announce(t('status.lost'));
+    }
+  }
+
   function updatePosition() {
-    return fetchJSON(API + '?units=kilometers')
-      .then(function (d) {
-        state.pos = d;
-        failures = 0;
-        status = { kind: 'updated', at: new Date() };
-        paintStats();
-        paintStatus();
-        render();
-        emit('position', d);
-      })
-      .catch(function () {
-        failures++;
-        if (failures === 2) {
-          status.kind = 'lost';
-          paintStatus();
-          announce(t('status.lost'));
-        }
-      });
+    if (SAT.source === 'tle') {
+      if (!propagator) return Promise.resolve();
+      var p = propagator.at(new Date());
+      if (p) accept(p); else lost();
+      return Promise.resolve();
+    }
+    return fetchJSON(API + '?units=kilometers').then(accept).catch(lost);
   }
 
   function updateTrack() {
     var now = Math.floor(Date.now() / 1000);
+
+    /* With the elements in hand the whole track is arithmetic: no requests,
+       no rate limit, and a point every thirty seconds instead of every six
+       minutes. */
+    if (SAT.source === 'tle') {
+      if (!propagator) return Promise.resolve();
+      var local = propagator.track(now - 55 * 60, now + 55 * 60, 30);
+      if (local.length) { state.track = local; state.dense = local; render(); }
+      return Promise.resolve();
+    }
+
     var stamps = [];
     for (var m = -55; m <= 55; m += 6) stamps.push(now + m * 60);
     var groups = [stamps.slice(0, 10), stamps.slice(10)];
@@ -601,6 +632,8 @@
 
   window.CSM = {
     API: API,
+    sat: SAT,
+    propagator: function () { return propagator; },
     t: t,
     fmt: fmt,
     fetchJSON: fetchJSON,
@@ -614,6 +647,7 @@
       if (!listeners[name]) listeners[name] = [];
       listeners[name].push(fn);
       if (name === 'position' && state.pos) fn(state.pos);
+      if (name === 'propagator' && propagator) fn(propagator);
     }
   };
 
@@ -628,9 +662,29 @@
   applyLang(lang);
   sizeCanvas();
 
-  updatePosition().then(updateTrack);
-  setInterval(updatePosition, REFRESH_MS);
-  setInterval(updateTrack, TRACK_MS);
+  function start() {
+    updatePosition().then(updateTrack);
+    setInterval(updatePosition, REFRESH_MS);
+    setInterval(updateTrack, TRACK_MS);
+  }
+
+  if (SAT.source === 'tle') {
+    status = { kind: 'elements', at: null };
+    paintStatus();
+    window.TLE.load(SAT)
+      .then(function (p) {
+        propagator = p;
+        emit('propagator', p);
+        start();
+      })
+      .catch(function () {
+        status.kind = 'noElements';
+        paintStatus();
+        announce(t('status.noElements'));
+      });
+  } else {
+    start();
+  }
 
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) updatePosition();

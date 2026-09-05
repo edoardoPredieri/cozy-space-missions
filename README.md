@@ -3,7 +3,8 @@
 A quiet window on the sky: where the International Space Station is, when it comes over you,
 and where Earth sits among its neighbours.
 
-**Live:** https://edoardopredieri.github.io/cozy-space-missions/
+**Live:** https://edoardopredieri.github.io/cozy-space-missions/ ·
+[Hubble](https://edoardopredieri.github.io/cozy-space-missions/hubble.html)
 
 A static page — no framework, no build step. English by default, Italian one click away.
 
@@ -41,10 +42,30 @@ once the section is scrolled into view, and every field that comes back is someb
 titles go in with `textContent`, never as markup, only `https` links are followed, duplicates are
 dropped, and links carry `rel="noopener noreferrer"`.
 
+## Two missions, one engine
+
+There are two pages — the Space Station and Hubble — and they are the same page. Each declares
+itself with `<body data-satellite="…">`; `assets/config.js` holds everything that differs, and
+`t()` resolves `<mission>.<key>` before falling back to the shared string, so only the copy that
+actually changes is written twice.
+
+The difference that matters is where the position comes from. Nobody publishes a live feed for
+Hubble, so its page fetches the orbital elements once and propagates them in the browser with
+SGP4. After that first request there is no network at all: the ground track and twelve hours of
+pass predictions are pure arithmetic, so they appear instantly instead of after a dozen throttled
+requests. The elements are cached for six hours.
+
+Because the orbit is in hand, the page can also say something the Station's page cannot. Hubble's
+orbit is tilted only 28.5°, so from 45° north it never climbs more than about 6° above the
+horizon — and the page says exactly that, with the number worked out for wherever you are,
+instead of leaving you wondering why the pass list is empty.
+
 ## Structure
 
 ```
-index.html          single page, SVG icon sprite, text marked with data-i18n
+index.html          the Space Station
+hubble.html         Hubble — same structure, different mission
+assets/config.js    what differs between missions: source, orbit, news search
 assets/style.css    "warm night / observatory": tokens, grain, cards
 assets/i18n.js      every string, English and Italian
 assets/astro.js     sun and moon position, look angles, track interpolation, planet ephemeris
@@ -52,16 +73,26 @@ assets/app.js       starfield, world map, live data, language switching, the sha
 assets/observer.js  geocoding, sky dome, pass prediction
 assets/space.js     the zoomable viewer, distance ladder, solar system
 assets/news.js      latest headlines, fetched lazily and rendered as plain text
+assets/tle.js       orbital elements, cached, propagated locally
+assets/sgp4.js      module shim over the vendored satellite.js
+assets/vendor/      satellite.js 5.0.0 (MIT), as native ES modules
 assets/world.js     simplified borders, English + Italian names (~70 KB)
 ```
 
 ## How the passes are worked out
 
-There is no TLE and no SGP4 here, on purpose — one fewer dependency and one fewer thing to break.
-The page asks *Where the ISS at?* for the Station's position every six minutes over the next twelve
-hours (thirteen batched calls, spaced out to respect the API), then interpolates that track locally
-with a Catmull-Rom spline on the unit sphere down to twenty-second resolution. Interpolation error
-is around 0.03°, which is a few kilometres on the ground and a handful of seconds on pass timing.
+**The Station** keeps its original method, which needs no orbital mechanics: the page asks
+*Where the ISS at?* for its position every six minutes over the next twelve hours (thirteen
+batched calls, spaced out to respect the API), then interpolates that track locally with a
+Catmull-Rom spline on the unit sphere down to twenty-second resolution. Interpolation error is
+around 0.03°, a few kilometres on the ground and a handful of seconds on pass timing.
+
+**Hubble** propagates its own orbit instead, which is both faster and more precise. satellite.js
+is vendored under `assets/vendor/` as native ES modules — no bundler, no CDN, so the site stays
+self-contained — and it reproduces the official Space-Track Report #3 verification vectors to
+within 29 metres in position and 1.1 cm/s in velocity. As an end-to-end check, propagating the
+Station's own elements and comparing against the position wheretheiss.at publishes for the same
+instant agrees to 0.4 km on the ground and 0.1 km in altitude.
 
 Look angles come from a spherical-Earth ENU transform. Sunlight is geometric: the Station at
 altitude *h* stays lit until the Sun is `acos(R / (R + h))` below its local horizon — about 20°
