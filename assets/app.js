@@ -11,6 +11,7 @@
   var TRACK_MS = 3 * 60 * 1000;   // ground track, when it has to be fetched
   var STORE_KEY = 'csm.lang';
   var propagator = null;          // set once the orbital elements are in, for TLE missions
+  var deep = null;                // set once the L2 table is in, for the far missions
   var reduceMotion = window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -20,7 +21,7 @@
   /*  Tiny shared bus, so observer.js and space.js can follow along      */
   /* ------------------------------------------------------------------ */
 
-  var listeners = { lang: [], position: [], place: [], propagator: [] };
+  var listeners = { lang: [], position: [], place: [], propagator: [], deep: [] };
   var resizeFns = [];
   var resizePending = false;
 
@@ -180,8 +181,12 @@
   /*  Map                                                                */
   /* ------------------------------------------------------------------ */
 
+  /* The missions out at L2 have no ground track to draw, so their pages carry
+     no map at all and everything below simply stands down. The engine above —
+     the bus, the language, the status pill, the starfield — is the same on all
+     four pages, which is the point. */
   var cv = $('map');
-  var ctx = cv.getContext('2d');
+  var ctx = cv ? cv.getContext('2d') : null;
   var W = 0, H = 0;
 
   var state = {
@@ -210,6 +215,7 @@
   var LAT_MAX = 72;
 
   function sizeCanvas() {
+    if (!cv) return;
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
     var rect = cv.getBoundingClientRect();
     W = Math.max(300, Math.round(rect.width));
@@ -312,7 +318,7 @@
   /* --- drawing ------------------------------------------------------ */
 
   function render() {
-    if (!W) return;
+    if (!ctx || !W) return;
     ctx.clearRect(0, 0, W, H);
 
     // ocean
@@ -552,16 +558,24 @@
     });
   }
 
+  /* Writes only where there is somewhere to write: the four pages do not all
+     show the same numbers, and a missing box is a page making a choice, not a
+     bug to shout about. */
+  function set(id, text) {
+    var el = $(id);
+    if (el) el.textContent = text;
+  }
+
   function paintStats() {
     var p = state.pos;
     if (!p) return;
-    $('v-lat').textContent = fmt(Math.abs(p.latitude), 2) + '° ' + t(p.latitude >= 0 ? 'dir.n' : 'dir.s');
-    $('v-lon').textContent = fmt(Math.abs(p.longitude), 2) + '° ' + t(p.longitude >= 0 ? 'dir.e' : 'dir.w');
-    $('v-alt').textContent = fmt(p.altitude, 0) + ' ' + t('unit.km');
-    $('v-vel').textContent = fmt(p.velocity, 0) + ' ' + t('unit.kmh');
-    $('v-vis').textContent = t(p.visibility === 'daylight' ? 'vis.day' : 'vis.night');
-    $('v-foot').textContent = p.footprint ? fmt(p.footprint, 0) + ' ' + t('unit.across') : '—';
-    $('overhead-place').textContent = placeAt(p.latitude, p.longitude);
+    set('v-lat', fmt(Math.abs(p.latitude), 2) + '° ' + t(p.latitude >= 0 ? 'dir.n' : 'dir.s'));
+    set('v-lon', fmt(Math.abs(p.longitude), 2) + '° ' + t(p.longitude >= 0 ? 'dir.e' : 'dir.w'));
+    set('v-alt', fmt(p.altitude, 0) + ' ' + t('unit.km'));
+    set('v-vel', fmt(p.velocity, 0) + ' ' + t('unit.kmh'));
+    set('v-vis', t(p.visibility === 'daylight' ? 'vis.day' : 'vis.night'));
+    set('v-foot', p.footprint ? fmt(p.footprint, 0) + ' ' + t('unit.across') : '—');
+    set('overhead-place', placeAt(p.latitude, p.longitude));
   }
 
   /* credentials: 'omit' says out loud what the browser would do anyway — no
@@ -593,6 +607,18 @@
      exactly like a connection that dropped. */
   function usable(d) {
     if (!d || typeof d !== 'object') return false;
+
+    /* A telescope at L2 has no latitude on Earth and no altitude above it, so
+       it is checked against what it does have: a distance out into the dark
+       and a direction to look in. */
+    if (SAT.kind === 'deep') {
+      var km = Number(d.km);
+      if (!isFinite(km) || km < 1e5 || km > 3e6) return false;
+      if (!isFinite(d.lon) || d.lon < 0 || d.lon >= 360) return false;
+      if (!isFinite(d.lat) || d.lat < -90 || d.lat > 90) return false;
+      return true;
+    }
+
     var lat = Number(d.latitude), lon = Number(d.longitude), alt = Number(d.altitude);
     if (!isFinite(lat) || !isFinite(lon) || !isFinite(alt)) return false;
     if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
@@ -623,6 +649,12 @@
   }
 
   function updatePosition() {
+    if (SAT.source === 'ephem') {
+      if (!deep) return Promise.resolve();
+      var d = deep.at(new Date());
+      if (d) accept(d); else lost();
+      return Promise.resolve();
+    }
     if (SAT.source === 'tle') {
       if (!propagator) return Promise.resolve();
       var p = propagator.at(new Date());
@@ -633,6 +665,7 @@
   }
 
   function updateTrack() {
+    if (SAT.kind === 'deep') return Promise.resolve();
     var now = Math.floor(Date.now() / 1000);
 
     /* With the elements in hand the whole track is arithmetic: no requests,
@@ -686,11 +719,13 @@
     smoothPath: smoothPath,
     lang: function () { return lang; },
     position: function () { return state.pos; },
+    deep: function () { return deep; },
     on: function (name, fn) {
       if (!listeners[name]) listeners[name] = [];
       listeners[name].push(fn);
       if (name === 'position' && state.pos) fn(state.pos);
       if (name === 'propagator' && propagator) fn(propagator);
+      if (name === 'deep' && deep) fn(deep);
     }
   };
 
@@ -711,7 +746,19 @@
     setInterval(updateTrack, TRACK_MS);
   }
 
-  if (SAT.source === 'tle') {
+  if (SAT.source === 'ephem') {
+    window.L2.load(SAT)
+      .then(function (p) {
+        deep = p;
+        emit('deep', p);
+        start();
+      })
+      .catch(function () {
+        status.kind = 'lost';
+        paintStatus();
+        announce(t('status.lost'));
+      });
+  } else if (SAT.source === 'tle') {
     status = { kind: 'elements', at: null };
     paintStatus();
     window.TLE.load(SAT)

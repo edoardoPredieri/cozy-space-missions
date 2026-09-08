@@ -1,10 +1,12 @@
 # Cozy Space Missions
 
-A quiet window on the sky: where the International Space Station is, when it comes over you,
-and where Earth sits among its neighbours.
+A quiet window on the sky: where four telescopes and one space station are right now, when they
+come over you, and where Earth sits among its neighbours.
 
-**Live:** https://edoardopredieri.github.io/cozy-space-missions/ ·
-[Hubble](https://edoardopredieri.github.io/cozy-space-missions/hubble.html)
+**Live:** [Space Station](https://edoardopredieri.github.io/cozy-space-missions/) ·
+[Hubble](https://edoardopredieri.github.io/cozy-space-missions/hubble.html) ·
+[Webb](https://edoardopredieri.github.io/cozy-space-missions/webb.html) ·
+[Roman](https://edoardopredieri.github.io/cozy-space-missions/roman.html)
 
 A static page — no framework, no build step. English by default, Italian one click away.
 
@@ -42,30 +44,55 @@ once the section is scrolled into view, and every field that comes back is someb
 titles go in with `textContent`, never as markup, only `https` links are followed, duplicates are
 dropped, and links carry `rel="noopener noreferrer"`.
 
-## Two missions, one engine
+## Four missions, one engine
 
-There are two pages — the Space Station and Hubble — and they are the same page. Each declares
-itself with `<body data-satellite="…">`; `assets/config.js` holds everything that differs, and
-`t()` resolves `<mission>.<key>` before falling back to the shared string, so only the copy that
-actually changes is written twice.
+There are four pages and they are the same page. Each declares itself with
+`<body data-satellite="…">`; `assets/config.js` holds everything that differs, and `t()` resolves
+`<mission>.<key>` before falling back to the shared string, so only the copy that actually changes
+is written more than once.
 
-The difference that matters is where the position comes from. Nobody publishes a live feed for
-Hubble, so its page fetches the orbital elements once and propagates them in the browser with
-SGP4. After that first request there is no network at all: the ground track and twelve hours of
-pass predictions are pure arithmetic, so they appear instantly instead of after a dozen throttled
-requests. The elements are cached for six hours.
+What differs is not the styling but the question each mission can honestly answer, and that comes
+down to where it is.
 
-Because the orbit is in hand, the page can also say something the Station's page cannot. Hubble's
-orbit is tilted only 28.5°, so from 45° north it never climbs more than about 6° above the
-horizon — and the page says exactly that, with the number worked out for wherever you are,
-instead of leaving you wondering why the pass list is empty.
+**The Space Station** has a live feed. Its position is fetched every few seconds, and its passes
+come from thirteen batched requests interpolated locally.
+
+**Hubble** has no feed — nobody publishes one — so its page fetches the orbital elements once and
+propagates them in the browser with SGP4. After that first request there is no network at all: the
+ground track and twelve hours of pass predictions are pure arithmetic, so they appear instantly
+instead of after a dozen throttled requests. The elements are cached for six hours.
+
+Because the orbit is in hand, that page can say something the Station's cannot: Hubble's orbit is
+tilted only 28.5°, so from 45° north it never climbs more than about 6° above the horizon. The
+page says exactly that, with the number worked out for wherever you are, instead of leaving you
+wondering why the pass list is empty.
+
+**Webb and Roman** are somewhere else entirely — out near L2, about 1.5 million km away, directly
+away from the Sun. Nothing out there has a ground track and nothing out there passes over your
+house, so those pages do not pretend otherwise: there is no map and no "from where you are". What
+they show instead is the distance, drawn to scale against the one distance everybody already has a
+feel for — the Moon's. Webb is a little over three times further out than the Moon.
+
+Their positions come from a table of real JPL Horizons positions shipped with the page and
+interpolated in the browser with a cubic through the four surrounding samples. Checked against JPL
+dates deliberately left out of the table, that is accurate to about 0.2%. Past the end of the
+table the page falls back to the computed L2 point — which is coarser, because a telescope loops
+around L2 by as much as 800,000 km rather than sitting on it — and says so in the "position from"
+box rather than quietly carrying on.
+
+**Roman is still on its way.** It launched on 30 August 2026 and reaches L2 around the end of
+September, after which it has about ninety days of commissioning before the surveys start. Its
+page works out where the mission is in that timeline from today's date, shows how far it has got,
+and retires the whole section by itself once the journey is over.
 
 ## Structure
 
 ```
 index.html          the Space Station
 hubble.html         Hubble — same structure, different mission
-assets/config.js    what differs between missions: source, orbit, news search
+webb.html           Webb, out at L2
+roman.html          Roman, on its way out to L2
+assets/config.js    what differs between missions: kind, source, orbit, news search
 assets/style.css    "warm night / observatory": tokens, grain, cards
 assets/i18n.js      every string, English and Italian
 assets/astro.js     sun and moon position, look angles, track interpolation, planet ephemeris
@@ -75,9 +102,14 @@ assets/space.js     the zoomable viewer, distance ladder, solar system
 assets/news.js      latest headlines, fetched lazily and rendered as plain text
 assets/tle.js       orbital elements, cached, propagated locally
 assets/sgp4.js      module shim over the vendored satellite.js
+assets/l2.js        the L2 missions: the shipped table, interpolation, the fallback
+assets/deep.js      the Earth–Moon–L2 picture, its numbers, and Roman's journey
+assets/ephem.js     real JPL positions for Webb and Roman (generated — see tools/)
 assets/vendor/      satellite.js 5.0.0 (MIT), as native ES modules
 assets/vendor/PROVENANCE.md  where it came from, what was changed, how to update it
 assets/world.js     simplified borders, English + Italian names (~70 KB)
+tools/make-ephem.py rebuilds assets/ephem.js from JPL Horizons
+tools/horizons-raw/ the raw Horizons responses, so the build can be checked
 ```
 
 ## How the passes are worked out
@@ -185,16 +217,26 @@ page the Station's elements under Hubble's catalogue number and it sees 51.6° w
 same gate runs on the cached copy — including its date, since a timestamp in the far future would
 otherwise make a poisoned entry permanently fresh.
 
+**The far pages ask nobody where they are.** Webb's and Roman's positions are shipped with the
+page, so their `connect-src` allows exactly one host — the news feed — and nothing else. That is the
+strongest version of the argument for vendoring: a table of numbers in the repository cannot be
+swapped out from under the page, cannot fail to load, and cannot be a CORS problem. It goes stale
+instead, which is a failure you can see coming and schedule around, and `tools/make-ephem.py`
+rebuilds it in one command. The table is still validated on load like everything else — sample
+shape, plausible distances, time running forwards — and a table that fails falls back to the
+computed L2 point and says so.
+
 **A feed that answers is not the same as a feed that is right.** The Station's position is checked
 for real angles and a real altitude before it is drawn; nulls or a maintenance page parsed as JSON
 now read as a lost connection rather than as `NaN° N` under a green light. Everything read back
 from `localStorage` — position, language, elements — goes through the same kind of gate, because
 that storage is shared with every other page on the origin.
 
-`tests/` holds the evidence: `test_csp.py` asserts the policy blocks nothing the pages need,
-`test_sec.py` feeds them hostile elements, a hostile geocoder, a lying feed and poisoned storage
-and asserts they stay boring, and `sgp4check.mjs` checks the propagator against the official
-vectors. See `tests/README.md`.
+`tests/` holds the evidence: `test_csp.py` asserts the policy blocks nothing any of the four pages
+need, `test_sec.py` feeds them hostile elements, a hostile geocoder, a lying feed, a corrupted
+ephemeris and poisoned storage and asserts they stay boring, `test_missions.py` checks that no
+page announces a mission it is not about, and `sgp4check.mjs` checks the propagator against the
+official vectors. See `tests/README.md`.
 
 ### What cannot be fixed here
 
@@ -235,7 +277,12 @@ python3 -m http.server 8000
 
 - [x] Live ISS map
 - [x] Your position, and when to look up
-- [ ] More missions: Hubble, Tiangong, Roman, JWST
+- [x] Four missions on one engine: the Station, Hubble, Webb and Roman
+- [ ] Tiangong
+- [ ] A way to show where an L2 telescope sits in tonight's sky — it is always opposite the Sun,
+      so it is up all night and highest at local midnight, though at magnitude 16 or so you would
+      need a serious telescope to see it
+- [ ] Refresh `assets/ephem.js` once JPL publishes Roman's trajectory past L2 arrival
 - [ ] iOS app
 
 ## Licence

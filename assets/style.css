@@ -344,6 +344,43 @@ main{ max-width: var(--maxw); margin: 0 auto; padding: 0 var(--s-3) var(--s-2); 
 }
 .stat-wide{ grid-column: span 2; }
 
+/* The far missions report five numbers rather than six, and one of them is a
+   long one, so they get their own rhythm instead of being squeezed into four. */
+.stats-deep{ grid-template-columns: repeat(5, 1fr); }
+
+/* The Earth–Moon–L2 picture is squarer than the world map: it has to hold a
+   line a million kilometres long and still show the Earth at one end. */
+.deep-wrap #deep{
+  display: block; width: 100%; height: auto;
+  aspect-ratio: 2.1 / 1;
+  border-radius: var(--r-lg);
+  background: #0a1226;
+}
+
+/* Roman's journey, which stops being drawn once the journey is over. */
+.journey-card[hidden], #journey[hidden]{ display: none !important; }
+.journey-phase{
+  margin: 0; display: flex; align-items: baseline; gap: var(--s-2);
+  flex-wrap: wrap; font-size: 15px;
+}
+.journey-phase strong{ color: var(--amber); font-weight: 600; }
+.journey-phase .sep{ opacity: .45; }
+.journey-phase span:not(.sep){ color: var(--ink-2); font-size: 13px; }
+.journey-meter{
+  height: 6px; border-radius: 999px; overflow: hidden;
+  background: rgba(244,234,216,.08);
+  margin: var(--s-3) 0 var(--s-3);
+}
+.journey-bar{
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--amber-deep), var(--amber));
+  transition: width .35s var(--ease);
+}
+@media (prefers-reduced-motion: reduce){
+  .journey-bar{ transition: none; }
+}
+.journey-note{ margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.62; }
+
 .stat-k, .overhead-k{
   font-size: 11px; letter-spacing: .09em; text-transform: uppercase;
   color: var(--muted);
@@ -694,6 +731,10 @@ a:focus-visible, button:focus-visible, input:focus-visible{
   .field input[type="text"]{ min-height: 46px; }
 }
 
+@media (max-width: 1080px){
+  .stats-deep{ grid-template-columns: repeat(3, 1fr); }
+}
+
 @media (max-width: 900px){
   .obs-body{ grid-template-columns: 1fr; }
   .dome-wrap{ margin-bottom: var(--s-1); }
@@ -711,7 +752,7 @@ a:focus-visible, button:focus-visible, input:focus-visible{
   .site-head{ flex-wrap: wrap; }
   .head-right{ width: 100%; justify-content: flex-start; }
   .hero{ padding: var(--s-3) 0 var(--s-3); }
-  .stats, .obs-stats{ grid-template-columns: repeat(2, 1fr); }
+  .stats, .obs-stats, .stats-deep{ grid-template-columns: repeat(2, 1fr); }
   .stat-wide{ grid-column: span 2; }
   .card{ padding: var(--s-2) var(--s-2) var(--s-1); border-radius: 20px; }
   .map-legend{

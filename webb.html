@@ -5,19 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- Nothing loads that is not listed here: no inline script, no third-party
-     script at all, and only the three APIs this page actually calls — Hubble's
-     page lists its own, different three. GitHub Pages cannot send headers, and
-     a meta policy cannot carry frame-ancestors, so framing stays unprotected —
-     see the README. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.wheretheiss.at https://api.spaceflightnewsapi.net https://nominatim.openstreetmap.org; upgrade-insecure-requests">
+     script at all, and only the two APIs this page actually calls: its position
+     comes from a table shipped with the page, so it asks nobody for it. GitHub
+     Pages cannot send headers, and a meta policy cannot carry frame-ancestors,
+     so framing stays unprotected — see the README. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.spaceflightnewsapi.net; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>Cozy Space Missions — where the ISS is right now</title>
-<meta name="description" content="A quiet window on the sky: the International Space Station's live position, when it passes over you, and where Earth sits among its neighbours.">
+<title>Cozy Space Missions — where Webb is right now</title>
+<meta name="description" content="A quiet window on the sky: the Hubble Space Telescope's live position, worked out from its orbit, and when it passes over you.">
 <meta name="theme-color" content="#0a0f1e">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="Cozy Space Missions">
-<meta property="og:description" content="Where the Space Station is, right now. A quiet window on the sky.">
+<meta property="og:description" content="Where Hubble is looking from, right now. A quiet window on the sky.">
 
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230a0f1e'/><circle cx='16' cy='16' r='4' fill='%23e8a34a'/><circle cx='16' cy='16' r='9' fill='none' stroke='%23e8a34a' stroke-opacity='.45'/></svg>">
 
@@ -26,7 +26,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css?v=12">
 </head>
-<body data-satellite="iss">
+<body data-satellite="webb">
 
 <svg class="sprite" aria-hidden="true" focusable="false">
   <symbol id="i-locate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
@@ -87,9 +87,9 @@
 
   <div class="head-right">
     <nav class="missions" data-i18n-aria-label="nav.group" aria-label="Missions">
-      <a href="./" class="is-on" aria-current="page" data-i18n="nav.iss">Space Station</a>
+      <a href="./" data-i18n="nav.iss">Space Station</a>
       <a href="hubble.html" data-i18n="nav.hubble">Hubble</a>
-      <a href="webb.html" data-i18n="nav.webb">Webb</a>
+      <a href="webb.html" class="is-on" aria-current="page" data-i18n="nav.webb">Webb</a>
       <a href="roman.html" data-i18n="nav.roman">Roman</a>
     </nav>
 
@@ -103,155 +103,68 @@
 <main id="main" tabindex="-1">
 
   <section class="hero">
-    <h1 data-i18n="hero.h1">Where the <em>Space&nbsp;Station</em> is, right now.</h1>
+    <h1 data-i18n="hero.h1">Where <em>Hubble</em> is looking from, right now.</h1>
     <p class="lede" data-i18n="hero.lede">
-      Some four hundred kilometres above our heads, seven people go around the Earth
-      sixteen times a day. This page follows them, quietly.
+      Just under five hundred kilometres up, a telescope the size of a bus has been
+      circling us since 1990. It sees no weather and no sunset. This page follows it, quietly.
     </p>
   </section>
 
-  <!-- ---------------- live map ---------------- -->
+  <!-- ---------------- how far out it is ---------------- -->
 
-  <section class="card map-card" aria-labelledby="map-title">
+  <section class="card map-card" aria-labelledby="deep-title">
     <div class="card-head">
-      <h2 id="map-title" data-i18n="map.title">Live position</h2>
+      <h2 id="deep-title" data-i18n="deep.title">How far out it is</h2>
       <p class="status" id="status" aria-live="off">
         <span class="dot" aria-hidden="true"></span><span id="status-text">Listening…</span>
       </p>
     </div>
 
-    <div class="map-wrap">
-      <canvas id="map" role="img" data-i18n-aria-label="map.alt"
-              aria-label="World map showing the current position of the International Space Station"></canvas>
-      <div class="map-legend" aria-hidden="true">
-        <span><i class="k-iss"></i><span data-i18n="sat.short">ISS</span></span>
-        <span><i class="k-track"></i><span data-i18n="legend.track">ground track</span></span>
-        <span><i class="k-night"></i><span data-i18n="legend.night">night</span></span>
-        <span id="legend-you" hidden><i class="k-you"></i><span data-i18n="legend.you">you</span></span>
+    <div class="map-wrap deep-wrap">
+      <canvas id="deep" class="zoomable" tabindex="0" role="img" data-i18n-aria-label="deep.alt"
+              aria-label="The Earth, the Moon's orbit and the telescope far beyond it, drawn to scale"></canvas>
+    </div>
+
+    <div class="zoom" id="deep-zoom" role="group" data-i18n-aria-label="zoom.group" aria-label="View and zoom">
+      <div class="zoom-presets">
+        <button type="button" data-preset="all" aria-pressed="true" data-i18n="deep.preset.all">All the way out</button>
+        <button type="button" data-preset="moon" aria-pressed="false" data-i18n="deep.preset.moon">Out to the Moon</button>
+        <button type="button" data-preset="earth" aria-pressed="false" data-i18n="deep.preset.earth">Close to home</button>
+      </div>
+      <div class="zoom-buttons">
+        <button type="button" data-zoom="out" data-i18n-aria-label="zoom.out" aria-label="Zoom out">−</button>
+        <button type="button" data-zoom="in" data-i18n-aria-label="zoom.in" aria-label="Zoom in">+</button>
+        <span class="zoom-label"></span>
       </div>
     </div>
 
-    <p class="overhead" id="overhead">
-      <span class="overhead-k" data-i18n="overhead.label">Point below the Station</span>
-      <strong id="overhead-place">—</strong>
-    </p>
+    <p class="fig-cap" data-i18n="deep.cap">Everything here is at true relative scale, in a frame that
+    turns with the year: the Sun is always off to the left, and L2 — the quiet point the telescope keeps
+    station near — always out to the right. The dashed circle is the Moon's orbit.</p>
+    <p class="hint" data-i18n="zoom.hint">Drag to pan, ⌘ or Ctrl with the wheel to zoom, or use the buttons.
+    With the figure focused, the arrow keys pan and + and − zoom.</p>
   </section>
 
-  <section class="stats" data-i18n-aria-label="stats.group" aria-label="Flight data">
+  <section class="stats stats-deep" data-i18n-aria-label="stats.group" aria-label="Flight data">
     <div class="stat">
-      <span class="stat-k" data-i18n="stat.lat">Latitude</span>
-      <span class="stat-v" id="v-lat">—</span>
-    </div>
-    <div class="stat">
-      <span class="stat-k" data-i18n="stat.lon">Longitude</span>
-      <span class="stat-v" id="v-lon">—</span>
+      <span class="stat-k" data-i18n="stat.dist">Distance from Earth</span>
+      <span class="stat-v" id="v-dist">—</span>
     </div>
     <div class="stat">
-      <span class="stat-k" data-i18n="stat.alt">Altitude</span>
-      <span class="stat-v" id="v-alt">—</span>
+      <span class="stat-k" data-i18n="stat.moons">Times the Moon's distance</span>
+      <span class="stat-v" id="v-moons">—</span>
     </div>
     <div class="stat">
-      <span class="stat-k" data-i18n="stat.vel">Speed</span>
-      <span class="stat-v" id="v-vel">—</span>
+      <span class="stat-k" data-i18n="stat.rate">Changing by</span>
+      <span class="stat-v" id="v-rate">—</span>
     </div>
-    <div class="stat stat-wide">
-      <span class="stat-k" data-i18n="stat.light">Light</span>
-      <span class="stat-v" id="v-vis">—</span>
+    <div class="stat">
+      <span class="stat-k" data-i18n="stat.sun">Distance from the Sun</span>
+      <span class="stat-v" id="v-sun">—</span>
     </div>
-    <div class="stat stat-wide">
-      <span class="stat-k" data-i18n="stat.foot">Visible horizon</span>
-      <span class="stat-v" id="v-foot">—</span>
-    </div>
-  </section>
-
-  <!-- ---------------- from where you are ---------------- -->
-
-  <section class="reveal section" id="observer" aria-labelledby="obs-title">
-    <div class="sec-head">
-      <div class="sec-title">
-        <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
-        <h2 id="obs-title" data-i18n="obs.title">From where you are</h2>
-      </div>
-      <p class="sec-sub" data-i18n="obs.sub">Tell the page where you are and it will work out how far the
-      Station is right now, which way to turn, and when it next comes over.</p>
-    </div>
-
-    <div class="card place-card">
-      <form class="place-form" id="place-form" novalidate>
-        <div class="field">
-          <label for="place-input" data-i18n="obs.label">Your street, town or postcode</label>
-          <div class="field-row">
-            <input id="place-input" type="text" autocomplete="street-address" enterkeyhint="search"
-                   data-i18n-placeholder="obs.placeholder" placeholder="Via Roma 1, Bologna"
-                   aria-describedby="place-hint">
-            <button type="submit" class="btn btn-primary" id="place-submit">
-              <svg class="ico" aria-hidden="true"><use href="#i-search"></use></svg>
-              <span data-i18n="obs.search">Search</span>
-            </button>
-          </div>
-          <p class="hint" id="place-hint" data-i18n="obs.hint">Looked up through OpenStreetMap. Your position
-          is kept in this browser and sent nowhere else.</p>
-          <p class="err" id="place-err" role="alert" hidden></p>
-        </div>
-
-        <button type="button" class="btn btn-ghost" id="locate-btn">
-          <svg class="ico" aria-hidden="true"><use href="#i-locate"></use></svg>
-          <span data-i18n="obs.locate">Use my position</span>
-        </button>
-      </form>
-
-      <ul class="place-results" id="place-results" hidden></ul>
-    </div>
-
-    <div class="card obs-panel" id="obs-panel" hidden>
-      <div class="card-head">
-        <div>
-          <h3 class="obs-place" id="obs-place">—</h3>
-          <p class="obs-coords" id="obs-coords"></p>
-        </div>
-        <button type="button" class="btn btn-quiet" id="obs-change" data-i18n="obs.change">Change</button>
-      </div>
-
-      <div class="obs-body">
-        <div class="dome-wrap">
-          <canvas id="dome" role="img" data-i18n-aria-label="obs.dome.alt"
-                  aria-label="Sky dome seen from your position, with the Station's current direction"></canvas>
-          <p class="dome-cap" id="dome-cap" data-i18n="obs.dome.below">Below the horizon right now</p>
-        </div>
-
-        <div class="obs-stats">
-          <div class="stat">
-            <span class="stat-k" data-i18n="obs.distance">Distance from you</span>
-            <span class="stat-v" id="o-dist">—</span>
-          </div>
-          <div class="stat">
-            <span class="stat-k" data-i18n="obs.direction">Direction</span>
-            <span class="stat-v" id="o-dir">—</span>
-          </div>
-          <div class="stat">
-            <span class="stat-k" data-i18n="obs.elevation">Height above horizon</span>
-            <span class="stat-v" id="o-elev">—</span>
-          </div>
-          <div class="stat">
-            <span class="stat-k" data-i18n="obs.ground">Ground distance</span>
-            <span class="stat-v" id="o-ground">—</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="passes">
-        <div class="passes-head">
-          <h4 data-i18n="pass.title">Next passes overhead</h4>
-          <p class="passes-status" id="pass-status"></p>
-        </div>
-        <div class="pass-progress" id="pass-progress" role="progressbar"
-             aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
-             data-i18n-aria-label="pass.progress" aria-label="Reading the track" hidden><span></span></div>
-        <ol class="pass-list" id="pass-list"></ol>
-        <p class="hint pass-ceiling" id="pass-ceiling" hidden></p>
-        <p class="hint" id="pass-hint" data-i18n="pass.hint">Computed from the Station's own track over the
-        next twelve hours. A pass marked as visible means it is still in sunlight while your sky is dark.</p>
-      </div>
+    <div class="stat">
+      <span class="stat-k" data-i18n="stat.where">Position from</span>
+      <span class="stat-v" id="v-where">—</span>
     </div>
   </section>
 
@@ -275,7 +188,7 @@
         <div class="zoom-presets">
           <button type="button" data-preset="all" aria-pressed="true" data-i18n="ladder.preset.all">Everything</button>
           <button type="button" data-preset="moon" aria-pressed="false" data-i18n="ladder.preset.moon">Out to the Moon</button>
-          <button type="button" data-preset="orbit" aria-pressed="false" data-i18n="ladder.preset.orbit">Low orbit</button>
+          <button type="button" data-preset="far" aria-pressed="false" data-i18n="ladder.preset.far">Out past L2</button>
         </div>
         <div class="zoom-buttons">
           <button type="button" data-zoom="out" data-i18n-aria-label="zoom.out" aria-label="Zoom out">−</button>
@@ -316,7 +229,7 @@
           <button type="button" data-preset="all" aria-pressed="true" data-i18n="solar.preset.all">Whole system</button>
           <button type="button" data-preset="inner" aria-pressed="false" data-i18n="solar.preset.inner">Inner planets</button>
           <button type="button" data-preset="moon" aria-pressed="false" data-i18n="solar.preset.moon">Earth and the Moon</button>
-          <button type="button" data-preset="station" aria-pressed="false" data-i18n="solar.preset.station">The Station</button>
+          <button type="button" data-preset="station" aria-pressed="false" data-i18n="solar.preset.station">Hubble</button>
         </div>
         <div class="zoom-buttons">
           <button type="button" data-zoom="out" data-i18n-aria-label="zoom.out" aria-label="Zoom out">−</button>
@@ -350,34 +263,6 @@
     </div>
   </section>
 
-  <!-- ---------------- notes ---------------- -->
-
-  <section class="reveal section notes">
-    <div class="sec-head">
-      <div class="sec-title">
-        <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
-        <h2 data-i18n="notes.title">How to read the map</h2>
-      </div>
-    </div>
-    <div class="note-grid">
-      <div class="note">
-        <h3 data-i18n="notes.trail.h">The trail</h3>
-        <p data-i18n="notes.trail.p">The amber line is the ground track: where the Station has been
-        over the past hour, and where it will be over the next one. Each lap takes about ninety minutes.</p>
-      </div>
-      <div class="note">
-        <h3 data-i18n="notes.shadow.h">The shadow</h3>
-        <p data-i18n="notes.shadow.p">The darker band is the half of the Earth where it is night.
-        The ISS is visible to the naked eye only while it is still in sunlight and the ground below is already dark.</p>
-      </div>
-      <div class="note">
-        <h3 data-i18n="notes.circle.h">The circle</h3>
-        <p data-i18n="notes.circle.p">The thin circle is the horizon: from anywhere inside it,
-        with a clear enough sky, the Station is above the horizon line.</p>
-      </div>
-    </div>
-  </section>
-
   <section class="reveal section roadmap">
     <div class="sec-head">
       <div class="sec-title">
@@ -386,7 +271,7 @@
       </div>
     </div>
     <ol class="road">
-      <li class="done"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="road.1">Live ISS map</span></li>
+      <li class="done"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="road.1">Live Hubble map</span></li>
       <li class="done"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="road.2">Your position, and when to look up</span></li>
       <li class="done"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="road.3">Four missions on one engine: the Station, Hubble, Webb and Roman</span></li>
       <li><svg class="ico" aria-hidden="true"><use href="#i-dot"></use></svg><span data-i18n="road.35">Tiangong, and a way to show a telescope at L2 in the sky</span></li>
@@ -397,7 +282,8 @@
 </main>
 
 <footer class="site-foot">
-  <p data-i18n="foot.sources">Flight data from <a href="https://wheretheiss.at/w/developer" rel="noopener">Where the ISS at?</a>,
+  <p data-i18n="foot.sources">Orbital elements from <a href="https://celestrak.org/" rel="noopener">Celestrak</a>,
+     position worked out in your browser with <a href="https://github.com/shashwatak/satellite-js" rel="noopener">satellite.js</a>,
      address search by <a href="https://openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a>,
      borders from Natural Earth. No cookies, no tracking.</p>
   <p class="foot-meta" data-i18n="foot.meta">Made slowly · <a href="https://github.com/edoardoPredieri/cozy-space-missions" rel="noopener">source on GitHub</a></p>
@@ -407,12 +293,11 @@
 <script src="assets/world.js?v=12"></script>
 <script src="assets/i18n.js?v=12"></script>
 <script src="assets/astro.js?v=12"></script>
-<script src="assets/app.js?v=12"></script>
-<script src="assets/observer.js?v=12"></script>
-<!-- the shipped L2 table, so the ladder can place Webb and Roman honestly -->
 <script src="assets/ephem.js?v=12"></script>
 <script src="assets/l2.js?v=12"></script>
+<script src="assets/app.js?v=12"></script>
 <script src="assets/space.js?v=12"></script>
+<script src="assets/deep.js?v=12"></script>
 <script src="assets/news.js?v=12"></script>
 </body>
 </html>

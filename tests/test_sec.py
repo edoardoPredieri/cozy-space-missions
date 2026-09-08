@@ -222,6 +222,61 @@ with sync_playwright() as p:
     check("junk not written back to storage", lg["stored"] in (None, "en", "it"), str(lg["stored"]))
     ctx5.close()
 
+    # ------------------------------------------- poisoned ephemeris table
+    # The L2 table is source code, not network input, so this is a build
+    # mistake rather than an attack — but a page on a shared origin should
+    # still refuse to draw a distance it cannot stand behind.
+    print("\nCorrupted L2 table (webb.html)")
+    BAD = [
+        ("distance out past the asteroid belt", "window.EPHEM.jwst.samples[3][1] = 5e8;"),
+        ("a distance that is not a number",     "window.EPHEM.jwst.samples[3][1] = 'soon';"),
+        ("time running backwards",              "window.EPHEM.jwst.samples[5][0] = 0;"),
+        ("longitude off the compass",           "window.EPHEM.jwst.samples[2][2] = 999;"),
+        ("the whole table replaced by junk",    "window.EPHEM.jwst = {samples: 'nope'};"),
+        ("the table missing entirely",          "delete window.EPHEM.jwst;"),
+    ]
+    for label, sabotage in BAD:
+        ctx6 = b.new_context(viewport={"width": 1280, "height": 900})
+        ctx6.route("**/api.spaceflightnewsapi.net/**", lambda r: r.abort())
+        # Runs after ephem.js has defined the table and before l2.js reads it.
+        ctx6.add_init_script("""
+          Object.defineProperty(window, 'EPHEM', {
+            configurable: true,
+            set: function (v) {
+              delete window.EPHEM;
+              window.EPHEM = v;
+              try { %s } catch (e) {}
+            },
+            get: function () { return undefined; }
+          });
+        """ % sabotage)
+        pg6 = ctx6.new_page()
+        e6 = []
+        pg6.on("pageerror", lambda e: e6.append(str(e)))
+        pg6.goto(f"http://localhost:{PORT}/webb.html", wait_until="load")
+        pg6.wait_for_timeout(2500)
+        r6 = pg6.evaluate("""() => {
+          const p = window.CSM.position();
+          return {
+            km: p ? p.km : null,
+            exact: p ? p.exact : null,
+            shown: (document.getElementById('v-dist') || {}).textContent || '',
+            where: (document.getElementById('v-where') || {}).textContent || '',
+            alive: typeof window.CSM
+          };
+        }""")
+        ok = (r6["alive"] == "object"
+              and (r6["km"] is None or (1e5 < r6["km"] < 3e6))
+              and "NaN" not in r6["shown"]
+              and "undefined" not in r6["shown"])
+        check(label, ok, str(r6))
+        # A rejected table must fall back and say so, never quietly keep the label.
+        if r6["km"] is not None and r6["exact"] is False:
+            check(label + " — falls back to the L2 point and says so",
+                  "Horizons" not in r6["where"], r6["where"])
+        check(label + " — page still runs", not e6, "; ".join(e6[:2]))
+        ctx6.close()
+
     b.close()
 
 print("\n" + ("FAILED: " + ", ".join(fail) if fail else "PASS — all security regressions held"))

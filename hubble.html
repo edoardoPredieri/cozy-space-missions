@@ -89,6 +89,8 @@
     <nav class="missions" data-i18n-aria-label="nav.group" aria-label="Missions">
       <a href="./" data-i18n="nav.iss">Space Station</a>
       <a href="hubble.html" class="is-on" aria-current="page" data-i18n="nav.hubble">Hubble</a>
+      <a href="webb.html" data-i18n="nav.webb">Webb</a>
+      <a href="roman.html" data-i18n="nav.roman">Roman</a>
     </nav>
 
     <div class="lang" id="lang" role="group" data-i18n-aria-label="lang.group" aria-label="Language">
@@ -386,7 +388,8 @@
     <ol class="road">
       <li class="done"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="road.1">Live Hubble map</span></li>
       <li class="done"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="road.2">Your position, and when to look up</span></li>
-      <li><svg class="ico" aria-hidden="true"><use href="#i-dot"></use></svg><span data-i18n="road.3">More missions: Tiangong, Roman, JWST</span></li>
+      <li class="done"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="road.3">Four missions on one engine: the Station, Hubble, Webb and Roman</span></li>
+      <li><svg class="ico" aria-hidden="true"><use href="#i-dot"></use></svg><span data-i18n="road.35">Tiangong, and a way to show a telescope at L2 in the sky</span></li>
       <li><svg class="ico" aria-hidden="true"><use href="#i-dot"></use></svg><span data-i18n="road.4">iOS app</span></li>
     </ol>
   </section>
@@ -408,6 +411,9 @@
 <script src="assets/tle.js?v=12"></script>
 <script src="assets/app.js?v=12"></script>
 <script src="assets/observer.js?v=12"></script>
+<!-- the shipped L2 table, so the ladder can place Webb and Roman honestly -->
+<script src="assets/ephem.js?v=12"></script>
+<script src="assets/l2.js?v=12"></script>
 <script src="assets/space.js?v=12"></script>
 <script src="assets/news.js?v=12"></script>
 <script type="module" src="assets/sgp4.js?v=12"></script>

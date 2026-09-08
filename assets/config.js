@@ -10,6 +10,7 @@ window.CSM_SATS = {
     id: 'iss',
     norad: 25544,
     page: 'index.html',
+    kind: 'orbit',            // goes round the Earth: it has a ground track and passes
 
     /* wheretheiss.at publishes the Station's position directly, including the
        sub-solar point. It has been reliable, so it stays. */
@@ -27,6 +28,7 @@ window.CSM_SATS = {
     id: 'hubble',
     norad: 20580,
     page: 'hubble.html',
+    kind: 'orbit',
 
     /* Nobody publishes Hubble's position as a feed, so the page takes the
        orbital elements and works the position out itself, in the browser. */
@@ -41,6 +43,46 @@ window.CSM_SATS = {
     minElevation: 5,         // tilted low, so it never climbs far up north
 
     news: 'Hubble',
+    accent: '#e8a34a'
+  },
+
+  /* The two far ones. Nothing at L2 has a ground track or passes overhead, so
+     these pages answer a different question — how far, in which direction, and
+     how fast that is changing — and their positions come from a table of real
+     JPL positions shipped with the page rather than from a live feed. */
+
+  webb: {
+    id: 'webb',
+    page: 'webb.html',
+    kind: 'deep',             // out at L2: no ground track, no passes
+    source: 'ephem',
+    ephem: 'jwst',
+
+    nominalKm: 1.5e6,         // the L2 point; the real distance is in the table
+    launched: '2021-12-25T12:20:00Z',
+    arrived: '2022-01-24T19:05:00Z',
+
+    news: 'James Webb Space Telescope',
+    accent: '#e8a34a'
+  },
+
+  roman: {
+    id: 'roman',
+    page: 'roman.html',
+    kind: 'deep',
+    source: 'ephem',
+    ephem: 'roman',
+
+    nominalKm: 1.5e6,
+    launched: '2026-08-30T11:26:04Z',
+
+    /* Still on its way as this was written. The page works the phase out from
+       the date, so it stops talking about the journey once the journey is
+       over, without anyone having to remember to edit it. */
+    cruiseDays: 30,           // roughly a month out to L2
+    commissioningDays: 90,    // NASA's stated commissioning period before science
+
+    news: 'Roman Space Telescope',
     accent: '#e8a34a'
   }
 

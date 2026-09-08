@@ -317,7 +317,10 @@
   var LADDER_PRESETS = {
     all:   { lo: 8,   hi: 6e9 },
     moon:  { lo: 8,   hi: 1.2e6 },
-    orbit: { lo: 60,  hi: 6000 }
+    orbit: { lo: 60,  hi: 6000 },
+    /* The far missions need the other end of the line: low orbit is a place
+       they have not been since the launch vehicle let go. */
+    far:   { lo: 1e5, hi: 5e6 }
   };
 
   function ladderX(km, W) {
@@ -329,24 +332,66 @@
     return Math.pow(10, ladder.lo + f * (ladder.hi - ladder.lo));
   }
 
+  /* Two kinds of mission, one question: how far from the Earth is it? A
+     satellite reports an altitude above the ground; a telescope at L2 reports
+     a distance out into the dark. */
+  function missionKm() {
+    var pos = CSM.position();
+    if (CSM.sat.kind === 'deep') return pos ? pos.km : (CSM.sat.nominalKm || 1.5e6);
+    return pos ? pos.altitude : CSM.sat.altKm;
+  }
+
+  /* Each page places the other three, so the four of them make one scale. */
+  var OTHERS = {
+    iss:    { km: function () { return 420; },     key: 'ladder.station', rank: 5.8 },
+    hubble: { km: function () { return 476; },     key: 'ladder.hubble',  rank: 5.6 },
+    webb:   { km: function () { return deepKm('jwst'); },  key: 'ladder.webb',  rank: 5.4 },
+    roman:  { km: function () { return deepKm('roman'); }, key: 'ladder.roman', rank: 5.2 }
+  };
+
+  /* A rung for a mission this page is not about still wants a real number, so
+     it comes from the same shipped table that mission's own page would use.
+
+     Past the end of that table it must NOT keep showing the last sample: the
+     table stops where JPL's published trajectory stops, and a frozen number
+     presented as today's would be a quiet lie — the worse kind here, because a
+     rung on a ladder carries no "where this came from" box to warn anyone. So
+     it falls back to the L2 point, exactly as the mission's own page does. */
+  function deepKm(which) {
+    var table = window.EPHEM && window.EPHEM[which];
+    var t = Date.now() / 1000;
+    var s = table && table.samples;
+
+    if (s && s.length && t >= s[0][0] && t <= s[s.length - 1][0]) {
+      var i = 0;
+      while (i < s.length - 2 && s[i + 1][0] < t) i++;
+      var f = (t - s[i][0]) / (s[i + 1][0] - s[i][0]);
+      return s[i][1] + f * (s[i + 1][1] - s[i][1]);
+    }
+
+    var e = A.planets(new Date()).earth;
+    return Math.sqrt(e.x * e.x + e.y * e.y + e.z * e.z) * AU * window.L2.L2_FRACTION;
+  }
+
   function ladderRungs() {
     var now = new Date();
     var p = A.planets(now);
     var pos = CSM.position();
     var out = [
       { km: 100, key: 'ladder.karman', rank: 7 },
-      { km: pos ? pos.altitude : CSM.sat.altKm, key: 'sat.short', rank: 10, hero: true },
+      { km: missionKm(), key: 'sat.short', rank: 10, hero: true },
       { km: 20200, key: 'ladder.gps', rank: 4 },
-      /* the sister mission gets a rung, so each page places the other */
-      (CSM.sat.id === 'hubble'
-        ? { km: 420, key: 'ladder.station', rank: 5.8 }
-        : { km: 476, key: 'ladder.hubble', rank: 4 }),
       { km: 35786, key: 'ladder.geo', rank: 6 },
       { km: A.moon(now).distance, key: 'ladder.moon', rank: 9 },
       { km: Math.hypot(p.earth.x, p.earth.y, p.earth.z) * AU, key: 'planet.sun', rank: 8 }
     ];
-    var PLANET_RANK = { mars: 5.6, venus: 5.4, jupiter: 5.2, neptune: 5.0,
-                        saturn: 4.6, mercury: 4.4, uranus: 4.2 };
+    Object.keys(OTHERS).forEach(function (id) {
+      if (id === CSM.sat.id) return;
+      out.push({ km: OTHERS[id].km(), key: OTHERS[id].key, rank: OTHERS[id].rank });
+    });
+
+    var PLANET_RANK = { mars: 4.9, venus: 4.8, jupiter: 4.7, neptune: 4.6,
+                        saturn: 4.5, mercury: 4.4, uranus: 4.2 };
     BODIES.forEach(function (b) {
       if (b.key === 'earth') return;
       out.push({ km: A.distanceAU(p.earth, p[b.key]) * AU, key: b.label,
@@ -665,7 +710,7 @@
       var ep = p.earth;
       var ex = X(ep.x), ey = Y(ep.y);
       var pos = CSM.position();
-      var altKm = pos ? pos.altitude : CSM.sat.altKm;
+      var altKm = missionKm();
       var issR = ((R_EARTH + altKm) / AU) * scale;
 
       c.strokeStyle = 'rgba(232,163,74,.34)';
@@ -745,7 +790,7 @@
     });
     rows.push({ color: '#cfd3dc', label: CSM.t('planet.moon'), km: A.moon(now).distance });
     var pos = CSM.position();
-    rows.push({ color: '#e8a34a', label: CSM.t('solar.iss'), km: pos ? pos.altitude : CSM.sat.altKm });
+    rows.push({ color: '#e8a34a', label: CSM.t('solar.iss'), km: missionKm() });
 
     rows.forEach(function (r) {
       var li = document.createElement('li');
@@ -809,4 +854,14 @@
   solarView.size();
 
   setInterval(function () { solarView.redraw(); }, 10 * 60 * 1000);
+
+  /* The zoom viewer, the scale bar and the body painter are shared with
+     deep.js, which draws the same kind of picture at a very different scale. */
+  window.SPACE = {
+    makeViewer: makeViewer,
+    drawScaleBar: drawScaleBar,
+    drawBody: drawBody,
+    drawSun: drawSun,
+    fmtAxis: fmtAxis
+  };
 })();

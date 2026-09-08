@@ -5,15 +5,17 @@ in the main README can be checked rather than believed.
 
 ```bash
 pip install playwright && playwright install chromium
-python3 tests/test_csp.py     # the policy blocks nothing the pages need
-python3 tests/test_sec.py     # hostile inputs leave the pages boring
-node    tests/sgp4check.mjs   # the propagator agrees with the official vectors
+python3 tests/test_csp.py       # the policy blocks nothing the pages need
+python3 tests/test_sec.py       # hostile inputs leave the pages boring
+python3 tests/test_deep.py      # Webb and Roman agree with JPL
+python3 tests/test_missions.py  # each page speaks only for itself
+node    tests/sgp4check.mjs     # the propagator agrees with the official vectors
 ```
 
 Each Python test serves the repo on a local port and drives it with a real
-browser; neither one needs the internet, because every outside call is stubbed.
+browser; none of them need the internet, because every outside call is stubbed.
 
-**`test_csp.py`** loads both pages with a `securitypolicyviolation` listener
+**`test_csp.py`** loads all four pages with a `securitypolicyviolation` listener
 attached and asserts zero violations, then checks that the things the policy
 could plausibly have broken still work: the vendored ES modules, the stylesheet,
 the canvases, the right mission on the right page.
@@ -27,12 +29,32 @@ and asserts the page stays dull:
 - a geocoder answering with markup in the place name, a 5000-character label and
   two hundred results;
 - a `localStorage` written by somebody else: latitude 999, a longitude that is a
-  word, elements dated in the far future.
+  word, elements dated in the far future;
+- a corrupted L2 ephemeris — a distance out past the asteroid belt, a distance
+  that is a word, time running backwards, the table gone — where the right
+  answer is to fall back to the computed L2 point and relabel the source, never
+  to draw a confident wrong distance.
+
+**`test_deep.py`** is the end-to-end for Webb and Roman. It pins the browser
+clock to a fixed instant and compares the distance the page shows against what
+JPL says for that same instant — a comparison that is only meaningful with the
+clock held still, since Roman is moving away fast enough to cover 36,000 km in
+the time between midnight and teatime. It also checks that these pages carry no
+map and no observer section, that Roman's journey panel is showing and Webb's is
+not, and that Italian leaves no English behind.
+
+**`test_missions.py`** walks all four pages in both languages and reads what a
+visitor would see, checking that no page announces a mission it is not about.
+The risk it guards is structural: any shared string that a mission forgets to
+override falls back to one written for the Space Station. Copy written *per
+mission* may name whoever it likes — that Roman carries a mirror the same size
+as Hubble's is the comparison NASA leads with — so the hero, the captions, the
+navigation, the ladder and the roadmap are exempt by design.
 
 **`sgp4check.mjs`** runs the two official Space-Track Report #3 test cases
 through the vendored propagator. `spacetrack-report-3.json` is copied from
 satellite.js (MIT) — see `../assets/vendor/PROVENANCE.md`. Current agreement:
-2.9 cm in position, 1.1 cm/s in velocity.
+29 metres in position, 1.1 cm/s in velocity.
 
 One thing worth knowing if you write more of these: the pages'
 Content-Security-Policy forbids `eval`, and Playwright's `wait_for_function`
