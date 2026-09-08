@@ -9,6 +9,7 @@ python3 tests/test_csp.py       # the policy blocks nothing the pages need
 python3 tests/test_sec.py       # hostile inputs leave the pages boring
 python3 tests/test_deep.py      # Webb and Roman agree with JPL
 python3 tests/test_solar.py     # each page shows its own mission in the neighbourhood
+python3 tests/test_ladder.py    # nothing vanishes from the distance ladder
 python3 tests/test_missions.py  # each page speaks only for itself
 node    tests/sgp4check.mjs     # the propagator agrees with the official vectors
 ```
@@ -54,6 +55,16 @@ preset is named after the mission and is wide enough to hold it. The
 Earth-and-Moon view is deliberately not checked: that canvas is square, spans
 about a million km, and something three times the Moon's distance away belongs
 outside a view named after the Moon.
+
+**`test_ladder.py`** works out where every planet, the Sun and the Moon belong
+on the distance ladder — from the same astronomy the figure uses — and then
+looks for a mark at each of those places, at three widths. It exists because
+the label placer used to drop the dot along with a name that would not fit, so
+whole planets left the axis and what remained read as Venus, the Sun, Jupiter.
+That looks like the ordering is broken; it is not. The axis is distance from
+Earth *today*, so it also asserts the Sun falls between Venus and Mercury,
+which is exactly where it belongs while Venus is on our side of it and Mercury
+is on the far side.
 
 **`test_missions.py`** walks all four pages in both languages and reads what a
 visitor would see, checking that no page announces a mission it is not about.

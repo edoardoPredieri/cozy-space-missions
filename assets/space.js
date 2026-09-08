@@ -476,6 +476,29 @@
       place(ladderX(iss.km, W), baseY - 20, iw, 12);
     }
 
+    /* Every rung gets its dot, whether or not its name fits.
+
+       This used to bail out entirely when a label collided, which took the dot
+       with it — so on a narrow figure Mercury and Mars vanished from the axis
+       altogether, and what was left read as Venus, then the Sun, then Jupiter.
+       That looks like the order is wrong. It is not: this axis is distance from
+       the Earth today, and today Venus is on our side of the Sun while Mercury
+       is on the far side of it. Leaving the dots in place shows that something
+       is there, and the caption says what the axis means. */
+    rungs.forEach(function (r) {
+      if (r.hero) return;
+      var x = ladderX(r.km, W);
+      if (r.key === 'planet.sun') {
+        var g = c.createRadialGradient(x, baseY, 0, x, baseY, 9);
+        g.addColorStop(0, 'rgba(255,214,140,.55)');
+        g.addColorStop(1, 'rgba(255,214,140,0)');
+        c.fillStyle = g;
+        c.beginPath(); c.arc(x, baseY, 9, 0, Math.PI * 2); c.fill();
+      }
+      c.fillStyle = r.color || (r.key === 'planet.sun' ? '#ffd68c' : 'rgba(244,234,216,.4)');
+      c.beginPath(); c.arc(x, baseY, r.key === 'planet.sun' ? 3.4 : 2.8, 0, Math.PI * 2); c.fill();
+    });
+
     c.textBaseline = 'alphabetic';
     byRank.forEach(function (r) {
       if (r.hero) return;
@@ -495,8 +518,6 @@
 
       c.strokeStyle = 'rgba(244,234,216,.22)';
       c.beginPath(); c.moveTo(x, baseY); c.lineTo(x, goUp ? y + 6 : y - 16); c.stroke();
-      c.fillStyle = r.color || 'rgba(244,234,216,.4)';
-      c.beginPath(); c.arc(x, baseY, 2.8, 0, Math.PI * 2); c.fill();
 
       c.textAlign = align;
       c.fillStyle = 'rgba(211,200,181,.9)';
