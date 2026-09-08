@@ -571,7 +571,12 @@
     all:     { radius: 31,      centre: 'sun' },
     inner:   { radius: 1.75,    centre: 'sun' },
     moon:    { radius: 0.0035,  centre: 'earth' },
-    station: { radius: 0.00022, centre: 'earth' }
+    /* The closest preset frames the mission, so it depends on the mission: a
+       view 33,000 km across holds an orbit round the Earth, and shows nothing
+       at all for something a million and a quarter kilometres away. */
+    station: CSM.sat.kind === 'deep'
+      ? { radius: 0.0125,   centre: 'earth' }
+      : { radius: 0.00022,  centre: 'earth' }
   };
 
   function planetsNow() { return A.planets(new Date()); }
@@ -705,8 +710,42 @@
       }
     }
 
+    /* A telescope at L2 has no orbit round the Earth to draw, so it is simply
+       plotted where it is — out along the line away from the Sun, at whatever
+       distance the shipped table gives for today. It appears as soon as the
+       view is close enough to tell it apart from the Earth, rather than at the
+       zoom meant for something in low orbit, where it would be far outside the
+       frame and so never drawn at all. */
+    if (deep && CSM.sat.kind === 'deep') {
+      var dp = CSM.position();
+      if (dp) {
+        var de = p.earth;
+        var dlon = dp.lon * Math.PI / 180, dlat = dp.lat * Math.PI / 180;
+        var flat = (dp.km / AU) * Math.cos(dlat);
+        var tx = X(de.x + flat * Math.cos(dlon));
+        var ty = Y(de.y + flat * Math.sin(dlon));
+
+        if (tx > -40 && tx < W + 40 && ty > -40 && ty < H + 40) {
+          var dg = c.createRadialGradient(tx, ty, 0, tx, ty, 20);
+          dg.addColorStop(0, 'rgba(232,163,74,.5)');
+          dg.addColorStop(1, 'rgba(232,163,74,0)');
+          c.fillStyle = dg;
+          c.beginPath(); c.arc(tx, ty, 20, 0, Math.PI * 2); c.fill();
+          c.fillStyle = '#e8a34a';
+          c.beginPath(); c.arc(tx, ty, 3.4, 0, Math.PI * 2); c.fill();
+
+          c.font = '500 10px "Inter", system-ui, sans-serif';
+          var dl = CSM.t('sat.short');
+          if (place(tx, ty - 13, c.measureText(dl).width, 11)) {
+            c.fillStyle = '#f3c98f';
+            c.fillText(dl, tx, ty - 13);
+          }
+        }
+      }
+    }
+
     // the Station's orbit, once Earth is big enough to hold it
-    if (veryDeep) {
+    if (veryDeep && CSM.sat.kind !== 'deep') {
       var ep = p.earth;
       var ex = X(ep.x), ey = Y(ep.y);
       var pos = CSM.position();

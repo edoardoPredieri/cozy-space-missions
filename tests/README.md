@@ -8,6 +8,7 @@ pip install playwright && playwright install chromium
 python3 tests/test_csp.py       # the policy blocks nothing the pages need
 python3 tests/test_sec.py       # hostile inputs leave the pages boring
 python3 tests/test_deep.py      # Webb and Roman agree with JPL
+python3 tests/test_solar.py     # each page shows its own mission in the neighbourhood
 python3 tests/test_missions.py  # each page speaks only for itself
 node    tests/sgp4check.mjs     # the propagator agrees with the official vectors
 ```
@@ -42,6 +43,17 @@ clock held still, since Roman is moving away fast enough to cover 36,000 km in
 the time between midnight and teatime. It also checks that these pages carry no
 map and no observer section, that Roman's journey panel is showing and Webb's is
 not, and that Italian leaves no English behind.
+
+**`test_solar.py`** counts amber pixels on the solar-system canvas, because
+that colour belongs to the mission and nothing else on that figure. It exists
+because the figure was written for a satellite going round the Earth and drew
+the mission only at a zoom about 33,000 km across — so on the two L2 pages,
+where the telescope is forty times further out than that view is wide, the one
+thing the reader came for was silently missing. It also checks that the closest
+preset is named after the mission and is wide enough to hold it. The
+Earth-and-Moon view is deliberately not checked: that canvas is square, spans
+about a million km, and something three times the Moon's distance away belongs
+outside a view named after the Moon.
 
 **`test_missions.py`** walks all four pages in both languages and reads what a
 visitor would see, checking that no page announces a mission it is not about.
