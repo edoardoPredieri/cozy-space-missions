@@ -28,18 +28,43 @@
   /*  Storage                                                            */
   /* ------------------------------------------------------------------ */
 
+  /* Anything read back out of storage is treated as if a stranger wrote it:
+     the numbers must be real angles on Earth, the names must be strings, and
+     a name that runs away with itself gets cut. */
+  function sane(p) {
+    if (!p || typeof p !== 'object') return null;
+    var lat = Number(p.lat), lon = Number(p.lon);
+    if (!isFinite(lat) || !isFinite(lon)) return null;
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+    return {
+      lat: lat,
+      lon: lon,
+      label: typeof p.label === 'string' ? p.label.slice(0, 120) : '',
+      sub: typeof p.sub === 'string' ? p.sub.slice(0, 160) : ''
+    };
+  }
+
   try {
     var raw = localStorage.getItem(STORE_KEY);
-    if (raw) {
-      var p = JSON.parse(raw);
-      if (p && isFinite(p.lat) && isFinite(p.lon)) place = p;
-    }
+    if (raw) place = sane(JSON.parse(raw));
   } catch (e) { /* private mode, or nothing saved yet */ }
+
+  /* What gets written down is deliberately blunter than what the page knows.
+     Every project on a github.io account shares one origin, so anything else
+     published under this account can read this key; three decimals is about a
+     hundred metres, which changes no pass by a second but is not an address.
+     The precise position the browser gave stays in memory for this visit only. */
+  var SAVED_PRECISION = 1000;
 
   function savePlace() {
     try {
-      if (place) localStorage.setItem(STORE_KEY, JSON.stringify(place));
-      else localStorage.removeItem(STORE_KEY);
+      if (!place) { localStorage.removeItem(STORE_KEY); return; }
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        lat: Math.round(place.lat * SAVED_PRECISION) / SAVED_PRECISION,
+        lon: Math.round(place.lon * SAVED_PRECISION) / SAVED_PRECISION,
+        label: place.label,
+        sub: place.sub
+      }));
     } catch (e) {}
   }
 
@@ -97,13 +122,16 @@
       });
   }
 
-  function renderResults(list) {
+  var MAX_RESULTS = 5;          // what we asked for; what we will draw regardless
+
+  function renderResults(all) {
     var ul = $('place-results');
     ul.innerHTML = '';
+    var list = (Array.isArray(all) ? all : []).slice(0, MAX_RESULTS);
     list.forEach(function (r) {
-      var parts = String(r.display_name || '').split(',');
-      var head = parts.shift().trim();
-      var sub = parts.join(',').trim();
+      var parts = String(r && r.display_name || '').slice(0, 300).split(',');
+      var head = parts.shift().trim().slice(0, 120);
+      var sub = parts.join(',').trim().slice(0, 160);
 
       var li = document.createElement('li');
       var b = document.createElement('button');
@@ -322,14 +350,24 @@
       tag.appendChild(svg);
       tag.appendChild(document.createTextNode(CSM.t(p.visible ? 'pass.visible' : 'pass.daylight')));
 
+      /* Built node by node rather than as a string: the separators are the only
+         markup here, so nothing that came out of a translation table — or, one
+         day, out of a feed — is ever parsed as HTML. */
       var detail = document.createElement('span');
       detail.className = 'pass-detail';
-      detail.innerHTML =
-        CSM.t('pass.duration').replace('{min}', mins) +
-        '<span class="sep">·</span>' +
-        CSM.t('pass.height').replace('{deg}', Math.round(p.maxEl)) +
-        '<span class="sep">·</span>' +
-        CSM.t('pass.from').replace('{a}', compass(p.azStart)).replace('{b}', compass(p.azEnd));
+      [
+        CSM.t('pass.duration').replace('{min}', mins),
+        CSM.t('pass.height').replace('{deg}', Math.round(p.maxEl)),
+        CSM.t('pass.from').replace('{a}', compass(p.azStart)).replace('{b}', compass(p.azEnd))
+      ].forEach(function (text, i) {
+        if (i) {
+          var sep = document.createElement('span');
+          sep.className = 'sep';
+          sep.textContent = '·';
+          detail.appendChild(sep);
+        }
+        detail.appendChild(document.createTextNode(text));
+      });
 
       li.appendChild(when);
       li.appendChild(detail);
@@ -515,7 +553,10 @@
     paintDome();
   }
 
-  function setPlace(p) {
+  function setPlace(input) {
+    /* Same gate whether this came from the geocoder, the browser or storage. */
+    var p = sane(input);
+    if (!p) { showError('obs.err.none'); return; }
     place = p;
     savePlace();
     CSM.emit('place', p);

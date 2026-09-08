@@ -76,6 +76,7 @@ assets/news.js      latest headlines, fetched lazily and rendered as plain text
 assets/tle.js       orbital elements, cached, propagated locally
 assets/sgp4.js      module shim over the vendored satellite.js
 assets/vendor/      satellite.js 5.0.0 (MIT), as native ES modules
+assets/vendor/PROVENANCE.md  where it came from, what was changed, how to update it
 assets/world.js     simplified borders, English + Italian names (~70 KB)
 ```
 
@@ -140,11 +141,75 @@ announcer instead. Motion is opacity and transform only, 350 ms, and disabled en
   about one request per second.
 - Address search: [Nominatim / OpenStreetMap](https://openstreetmap.org/copyright), only when you
   press Search. Coordinates from the browser's geolocation are never sent anywhere; the chosen
-  position is kept in `localStorage` and used only for local maths.
+  position is used only for local maths.
 - Borders: [Natural Earth](https://www.naturalearthdata.com/) (public domain), via
   [johan/world.geo.json](https://github.com/johan/world.geo.json), simplified with Douglas–Peucker.
 
 No cookies, no analytics, no CDN dependency other than Google Fonts.
+
+**What gets written down is blunter than what the page knows.** Every project published under a
+`github.io` account shares one origin, so anything else on that account can read this site's
+`localStorage`. The remembered position is therefore rounded to three decimal places — about a
+hundred metres, which changes no pass prediction by a second but is a neighbourhood rather than an
+address. The precise position the browser hands over stays in memory for the visit and is never
+persisted. Nothing else about you is stored: a language choice, and Hubble's orbital elements.
+
+## Security
+
+The page's whole attack surface is other people's data — three or four public APIs, plus whatever
+is sitting in `localStorage` — so the rules are about where that data is allowed to go.
+
+**Nothing fetched is ever markup.** Feed titles, place names and country names go in through
+`textContent` or built nodes. `innerHTML` appears seven times and six of them assign the empty
+string to clear a list; the one line that writes actual HTML, in `app.js`, writes translations,
+and `i18n.js` is source code shipped with the page — nothing fetched, typed or stored is ever
+allowed into it. The comment at that line says so, so that the invariant survives the next person
+to touch it.
+
+**Nothing third-party executes.** satellite.js is vendored rather than pulled from a CDN, because a
+CDN script is a standing invitation to replace it later; `assets/vendor/PROVENANCE.md` records the
+exact commit and the one mechanical change made to it. That is what lets the
+Content-Security-Policy on both pages read `default-src 'none'` with `script-src 'self'` and no
+exceptions — no inline scripts, no `unsafe-inline`, no `unsafe-eval`. `connect-src` lists only the
+handful of hosts each page actually calls, and the two pages list different ones: Hubble's page
+never touches the Station's feed, so that host is not reachable from it at all.
+
+**Elements are checked before they become physics, and so is the orbit they produce.** A TLE is
+validated for shape and length and for its NORAD id before SGP4 sees it — but it is worth being
+plain about what that id is worth: it is five characters of the same string the server sent, a
+label the sender chose rather than a signature. Checking it catches an honest mix-up and nothing
+more. What a relabelled TLE cannot fake is the orbit itself, because the orbit is what gets drawn,
+so the propagated inclination has to match the inclination the mission is known to have. Hand the
+page the Station's elements under Hubble's catalogue number and it sees 51.6° where it expects
+28.5°, and draws nothing rather than a confident lie. Altitude and period are bounded too, and the
+same gate runs on the cached copy — including its date, since a timestamp in the far future would
+otherwise make a poisoned entry permanently fresh.
+
+**A feed that answers is not the same as a feed that is right.** The Station's position is checked
+for real angles and a real altitude before it is drawn; nulls or a maintenance page parsed as JSON
+now read as a lost connection rather than as `NaN° N` under a green light. Everything read back
+from `localStorage` — position, language, elements — goes through the same kind of gate, because
+that storage is shared with every other page on the origin.
+
+`tests/` holds the evidence: `test_csp.py` asserts the policy blocks nothing the pages need,
+`test_sec.py` feeds them hostile elements, a hostile geocoder, a lying feed and poisoned storage
+and asserts they stay boring, and `sgp4check.mjs` checks the propagator against the official
+vectors. See `tests/README.md`.
+
+### What cannot be fixed here
+
+GitHub Pages serves static files and sends no headers of its own, and a `<meta>` policy cannot
+carry every directive. So three protections are simply unavailable:
+
+- **`frame-ancestors`** — meta policies ignore it, so the pages can be framed by anyone. There is
+  nothing to clickjack (no login, no button that changes anything for anyone else), which is the
+  only reason this is acceptable rather than a bug.
+- **`X-Content-Type-Options: nosniff`** and **`Permissions-Policy`** — headers only. Geolocation is
+  therefore not locked down at the platform level; it is only ever requested when you press the
+  button.
+
+Moving to any host that can send headers (Cloudflare Pages, Netlify) would close all three without
+a single change to the code.
 
 ## Adding a language
 

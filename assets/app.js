@@ -54,9 +54,13 @@
   /* ------------------------------------------------------------------ */
 
   var lang = 'en';
+  var has = function (obj, key) { return Object.prototype.hasOwnProperty.call(obj, key); };
+
   try {
+    /* hasOwnProperty, not `in`: "constructor" and "__proto__" are truthy on any
+       object, and a stored language of "toString" would otherwise stick. */
     var saved = localStorage.getItem(STORE_KEY);
-    if (saved && window.I18N[saved]) lang = saved;
+    if (saved && has(window.I18N, saved)) lang = saved;
   } catch (e) { /* private mode: keep the default */ }
 
   /* Most strings are shared; a mission can override any of them with a
@@ -72,7 +76,7 @@
   }
 
   function applyLang(code) {
-    if (!window.I18N[code]) return;
+    if (!has(window.I18N, code)) return;
     lang = code;
     try { localStorage.setItem(STORE_KEY, code); } catch (e) {}
 
@@ -81,6 +85,15 @@
     var md = document.querySelector('meta[name="description"]');
     if (md) md.setAttribute('content', t('doc.desc'));
 
+    /* The one place in the site that writes HTML, and it does so on purpose:
+       several strings carry <em> or a credit link, and splitting them into
+       fragments would make them untranslatable.
+
+       The invariant that makes it safe: i18n.js is source code, not data.
+       Every string here is written by hand and shipped with the page — nothing
+       fetched, typed, stored or geocoded ever reaches window.I18N. If that
+       ever stops being true, this line has to become DOM building, the way
+       observer.js builds its pass details. */
     var nodes = document.querySelectorAll('[data-i18n]');
     for (var i = 0; i < nodes.length; i++) {
       nodes[i].innerHTML = t(nodes[i].getAttribute('data-i18n'));
@@ -551,16 +564,46 @@
     $('overhead-place').textContent = placeAt(p.latitude, p.longitude);
   }
 
+  /* credentials: 'omit' says out loud what the browser would do anyway — no
+     cookie of ours ever travels to a third-party API. The abort keeps a feed
+     that accepts the connection and then says nothing from leaving a button
+     disabled and a spinner turning for the rest of the visit. */
+  var FETCH_TIMEOUT_MS = 12000;
+
   function fetchJSON(url) {
-    return fetch(url, { cache: 'no-store' }).then(function (r) {
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, FETCH_TIMEOUT_MS) : 0;
+    return fetch(url, {
+      cache: 'no-store',
+      credentials: 'omit',
+      redirect: 'follow',
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
-    });
+    }).finally(function () { if (timer) clearTimeout(timer); });
   }
 
   var failures = 0;
 
+  /* A live feed can fail by answering rather than by going quiet: nulls where
+     numbers should be, a maintenance page parsed as JSON, a compromised host.
+     Painting "NaN° N" under a green "updated" light would be a worse lie than
+     saying nothing, so a reading that is not a real place on Earth is treated
+     exactly like a connection that dropped. */
+  function usable(d) {
+    if (!d || typeof d !== 'object') return false;
+    var lat = Number(d.latitude), lon = Number(d.longitude), alt = Number(d.altitude);
+    if (!isFinite(lat) || !isFinite(lon) || !isFinite(alt)) return false;
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
+    if (alt < 80 || alt > 100000) return false;
+    d.latitude = lat; d.longitude = lon; d.altitude = alt;
+    d.velocity = isFinite(Number(d.velocity)) ? Number(d.velocity) : 0;
+    return true;
+  }
+
   function accept(d) {
+    if (!usable(d)) { lost(); return; }
     state.pos = d;
     failures = 0;
     status = { kind: 'updated', at: new Date() };
