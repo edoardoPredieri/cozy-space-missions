@@ -55,7 +55,7 @@ AMBER_COUNT = """() => {
 
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"])
-    for page, mission in (("index.html", "iss"), ("hubble.html", "hubble"),
+    for page, mission in (("iss.html", "iss"), ("hubble.html", "hubble"),
                           ("webb.html", "webb"), ("roman.html", "roman")):
         ctx = b.new_context(viewport={"width": 1280, "height": 1000})
         ctx.route("**/celestrak.org/**",

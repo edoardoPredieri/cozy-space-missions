@@ -30,7 +30,7 @@ document.addEventListener('securitypolicyviolation', function (e) {
 });
 """
 
-pages = [("index.html", "iss"), ("hubble.html", "hubble"),
+pages = [("index.html", "home"), ("iss.html", "iss"), ("hubble.html", "hubble"),
          ("webb.html", "webb"), ("roman.html", "roman")]
 fail = False
 
@@ -61,6 +61,8 @@ with sync_playwright() as p:
           canvases: document.querySelectorAll('canvas').length,
           fonts: Array.from(document.fonts).map(f => f.family + ':' + f.status).slice(0, 8),
           deepOk: !!(window.CSM && window.CSM.sat.kind === 'deep' && window.CSM.position()),
+          homeOk: !!(document.getElementById('moon-name') &&
+                     document.getElementById('moon-name').textContent.length > 2),
           starPainted: (function(){
             var c = document.getElementById('stars');
             if (!c) return 'no canvas';
@@ -95,6 +97,9 @@ with sync_playwright() as p:
             fail = True
         if state["csm"] != "object":
             print("FAIL: CSM bus missing")
+            fail = True
+        if mission == "home" and not state["homeOk"]:
+            print("FAIL: the front page drew nothing")
             fail = True
         if mission in ("webb", "roman") and not state["deepOk"]:
             print("FAIL: the L2 table did not load")

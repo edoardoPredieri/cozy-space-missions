@@ -10,6 +10,7 @@ python3 tests/test_sec.py       # hostile inputs leave the pages boring
 python3 tests/test_deep.py      # Webb and Roman agree with JPL
 python3 tests/test_solar.py     # each page shows its own mission in the neighbourhood
 python3 tests/test_ladder.py    # nothing vanishes from the distance ladder
+python3 tests/test_phase.py     # the Moon disc shows the fraction the page claims
 python3 tests/test_missions.py  # each page speaks only for itself
 node    tests/sgp4check.mjs     # the propagator agrees with the official vectors
 ```
@@ -55,6 +56,15 @@ preset is named after the mission and is wide enough to hold it. The
 Earth-and-Moon view is deliberately not checked: that canvas is square, spans
 about a million km, and something three times the Moon's distance away belongs
 outside a view named after the Moon.
+
+**`test_phase.py`** counts the lit pixels of the Moon and Earth discs the
+browser actually painted and compares them with the percentages printed beside
+them, at eight points around one lunation. It exists because a phase drawing
+has exactly one number in it and one easy way to get that number backwards —
+the signed half-width of the terminator — and getting it backwards paints the
+precise complement, which looks entirely plausible. It was backwards: the page
+said 58% next to a disc that was 42% lit, and the Moon and the Earth were
+showing each other's phase.
 
 **`test_ladder.py`** works out where every planet, the Sun and the Moon belong
 on the distance ladder — from the same astronomy the figure uses — and then

@@ -98,7 +98,7 @@ def check(name, cond, detail=""):
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--no-sandbox"])
     for width in (1440, 900, 420):
-        for page in ("index.html", "webb.html"):
+        for page in ("iss.html", "webb.html"):
             ctx = b.new_context(viewport={"width": width, "height": 1000})
             ctx.route("**/api.wheretheiss.at/**",
                       lambda r: r.fulfill(status=200, content_type="application/json",

@@ -232,32 +232,14 @@
 
   /* --- day/night terminator ----------------------------------------- */
 
+  /* Both live in globe.js now: the front page draws the same world with a
+     different set of things on it, and neither copy should be able to drift. */
   function terminatorLine(solarLat, solarLon) {
-    var dec = solarLat;
-    if (Math.abs(dec) < 0.6) dec = dec >= 0 ? 0.6 : -0.6;
-    var tanDec = Math.tan(dec * Math.PI / 180);
-    var pts = [];
-    for (var lon = -180; lon <= 180; lon += 2) {
-      var d = (lon - solarLon) * Math.PI / 180;
-      var lat = Math.atan(-Math.cos(d) / tanDec) * 180 / Math.PI;
-      pts.push([lon, Math.max(-90, Math.min(90, lat))]);
-    }
-    return pts;
+    return window.GLOBE.terminator(solarLat, solarLon);
   }
 
   function nightPath(solarLat, solarLon) {
-    var pts = terminatorLine(solarLat, solarLon);
-    // sun north of the equator → night lies south of the terminator, and vice versa
-    var southIsNight = solarLat > 0;
-    ctx.beginPath();
-    ctx.moveTo(px(pts[0][0]), py(pts[0][1]));
-    for (var i = 1; i < pts.length; i++) ctx.lineTo(px(pts[i][0]), py(pts[i][1]));
-    if (southIsNight) {
-      ctx.lineTo(W, H); ctx.lineTo(0, H);
-    } else {
-      ctx.lineTo(W, 0); ctx.lineTo(0, 0);
-    }
-    ctx.closePath();
+    window.GLOBE.nightPath(ctx, px, py, W, H, solarLat, solarLon);
   }
 
   /* --- visibility circle -------------------------------------------- */
@@ -331,28 +313,7 @@
 
     // land
     var world = window.WORLD;
-    if (world && world.c) {
-      ctx.fillStyle = '#1b2a45';
-      ctx.strokeStyle = 'rgba(140,170,215,.20)';
-      ctx.lineWidth = 0.6;
-      for (var c = 0; c < world.c.length; c++) {
-        var polys = world.c[c].p;
-        for (var q = 0; q < polys.length; q++) {
-          var rings = polys[q];
-          ctx.beginPath();
-          for (var r = 0; r < rings.length; r++) {
-            var ring = rings[r];
-            for (var i = 0; i < ring.length; i++) {
-              var x = px(ring[i][0]), y = py(ring[i][1]);
-              if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
-          }
-          ctx.fill('evenodd');
-          ctx.stroke();
-        }
-      }
-    }
+    window.GLOBE.paintLand(ctx, px, py);
 
     // night: a fill, a boundary and a texture, so it never reads by colour alone
     if (state.pos && state.pos.solar_lat != null) {
@@ -649,7 +610,11 @@
   }
 
   function updatePosition() {
-    if (SAT.source === 'ephem') {
+    if (SAT.source === 'none') {
+    /* Nothing to poll: the front page's figures each keep their own time. */
+    status = { kind: 'updated', at: new Date() };
+    paintStatus();
+  } else if (SAT.source === 'ephem') {
       if (!deep) return Promise.resolve();
       var d = deep.at(new Date());
       if (d) accept(d); else lost();
@@ -746,7 +711,11 @@
     setInterval(updateTrack, TRACK_MS);
   }
 
-  if (SAT.source === 'ephem') {
+  if (SAT.source === 'none') {
+    /* Nothing to poll: the front page's figures each keep their own time. */
+    status = { kind: 'updated', at: new Date() };
+    paintStatus();
+  } else if (SAT.source === 'ephem') {
     window.L2.load(SAT)
       .then(function (p) {
         deep = p;

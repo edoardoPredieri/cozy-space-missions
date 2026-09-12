@@ -80,7 +80,7 @@ with sync_playwright() as p:
         ctx.close()
 
     # ------------------------------------------------------------ geocoder
-    print("\nHostile geocoder response (index.html)")
+    print("\nHostile geocoder response (iss.html)")
     HOSTILE = json.dumps([
         {"display_name": "<img src=x onerror=window.__pwned=1>, " + "A" * 5000,
          "lat": "44.4949", "lon": "11.3426"},
@@ -93,7 +93,7 @@ with sync_playwright() as p:
     ctx.route("**/api.wheretheiss.at/**", lambda r: r.abort())
     ctx.route("**/api.spaceflightnewsapi.net/**", lambda r: r.abort())
     pg = ctx.new_page()
-    pg.goto(f"http://localhost:{PORT}/index.html", wait_until="load")
+    pg.goto(f"http://localhost:{PORT}/iss.html", wait_until="load")
     pg.wait_for_timeout(1500)
     pg.fill("#place-input", "bologna")
     pg.click("#place-submit")
@@ -123,7 +123,7 @@ with sync_playwright() as p:
     check("stored label capped", stored and len(stored["label"]) <= 120, str(len(stored["label"]) if stored else -1))
 
     # ------------------------------------------------- poisoned storage
-    print("\nPoisoned localStorage (index.html)")
+    print("\nPoisoned localStorage (iss.html)")
     ctx2 = b.new_context(viewport={"width": 1280, "height": 900})
     ctx2.route("**/api.wheretheiss.at/**", lambda r: r.abort())
     ctx2.route("**/api.spaceflightnewsapi.net/**", lambda r: r.abort())
@@ -138,7 +138,7 @@ with sync_playwright() as p:
     pg2 = ctx2.new_page()
     errs = []
     pg2.on("pageerror", lambda e: errs.append(str(e)))
-    pg2.goto(f"http://localhost:{PORT}/index.html", wait_until="load")
+    pg2.goto(f"http://localhost:{PORT}/iss.html", wait_until="load")
     pg2.wait_for_timeout(2000)
     s = pg2.evaluate("""() => ({
       pwned: !!window.__pwned,
@@ -152,7 +152,7 @@ with sync_playwright() as p:
     ctx2.close()
 
     # --------------------------------------------- feed answering nonsense
-    print("\nLive feed answering nonsense (index.html)")
+    print("\nLive feed answering nonsense (iss.html)")
     JUNK = json.dumps({"latitude": "n/a", "longitude": None, "altitude": None,
                        "velocity": "fast", "visibility": "daylight"})
     ctx3 = b.new_context(viewport={"width": 1280, "height": 900})
@@ -163,7 +163,7 @@ with sync_playwright() as p:
     pg3 = ctx3.new_page()
     errs3 = []
     pg3.on("pageerror", lambda e: errs3.append(str(e)))
-    pg3.goto(f"http://localhost:{PORT}/index.html", wait_until="load")
+    pg3.goto(f"http://localhost:{PORT}/iss.html", wait_until="load")
     pg3.wait_for_timeout(9000)      # long enough for a second failure to register
     st = pg3.evaluate("""() => ({
       stats: Array.from(document.querySelectorAll('.stat-v')).map(e => e.textContent),
@@ -204,13 +204,13 @@ with sync_playwright() as p:
     ctx4.close()
 
     # ------------------------------------------------ language key poisoning
-    print("\nPoisoned language key (index.html)")
+    print("\nPoisoned language key (iss.html)")
     ctx5 = b.new_context(viewport={"width": 1280, "height": 900})
     ctx5.add_init_script("try { localStorage.setItem('csm.lang', 'constructor'); } catch (e) {}")
     ctx5.route("**/api.wheretheiss.at/**", lambda r: r.abort())
     ctx5.route("**/api.spaceflightnewsapi.net/**", lambda r: r.abort())
     pg5 = ctx5.new_page()
-    pg5.goto(f"http://localhost:{PORT}/index.html", wait_until="load")
+    pg5.goto(f"http://localhost:{PORT}/iss.html", wait_until="load")
     pg5.wait_for_timeout(1500)
     lg = pg5.evaluate("""() => ({
       lang: window.CSM.lang(),

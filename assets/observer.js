@@ -8,8 +8,7 @@
   var CSM = window.CSM, A = window.ASTRO;
   var $ = function (id) { return document.getElementById(id); };
 
-  var STORE_KEY = 'csm.place';
-  var GEOCODE = 'https://nominatim.openstreetmap.org/search';
+  var P = window.PLACE;
 
   var PASS_HOURS = 12;
   var PASS_STEP_MIN = 6;      // sampling step asked of the API
@@ -19,54 +18,15 @@
   var REQUEST_GAP_MS = 1300;  // the API asks for about one call a second
   var PASS_TTL_MS = 20 * 60 * 1000;
 
-  var place = null;           // {lat, lon, label, sub}
   var passes = null;          // [{start, max, end, maxEl, azStart, azMax, azEnd, visible}]
   var passesAt = 0;
   var passesBusy = false;
 
-  /* ------------------------------------------------------------------ */
-  /*  Storage                                                            */
-  /* ------------------------------------------------------------------ */
-
-  /* Anything read back out of storage is treated as if a stranger wrote it:
-     the numbers must be real angles on Earth, the names must be strings, and
-     a name that runs away with itself gets cut. */
-  function sane(p) {
-    if (!p || typeof p !== 'object') return null;
-    var lat = Number(p.lat), lon = Number(p.lon);
-    if (!isFinite(lat) || !isFinite(lon)) return null;
-    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
-    return {
-      lat: lat,
-      lon: lon,
-      label: typeof p.label === 'string' ? p.label.slice(0, 120) : '',
-      sub: typeof p.sub === 'string' ? p.sub.slice(0, 160) : ''
-    };
-  }
-
-  try {
-    var raw = localStorage.getItem(STORE_KEY);
-    if (raw) place = sane(JSON.parse(raw));
-  } catch (e) { /* private mode, or nothing saved yet */ }
-
-  /* What gets written down is deliberately blunter than what the page knows.
-     Every project on a github.io account shares one origin, so anything else
-     published under this account can read this key; three decimals is about a
-     hundred metres, which changes no pass by a second but is not an address.
-     The precise position the browser gave stays in memory for this visit only. */
-  var SAVED_PRECISION = 1000;
-
-  function savePlace() {
-    try {
-      if (!place) { localStorage.removeItem(STORE_KEY); return; }
-      localStorage.setItem(STORE_KEY, JSON.stringify({
-        lat: Math.round(place.lat * SAVED_PRECISION) / SAVED_PRECISION,
-        lon: Math.round(place.lon * SAVED_PRECISION) / SAVED_PRECISION,
-        label: place.label,
-        sub: place.sub
-      }));
-    } catch (e) {}
-  }
+  /* Where the reader is standing — and every rule about remembering it and
+     about what the geocoder sends back — lives in place.js, so there is one
+     copy of those rather than one per page that asks. This file keeps a mirror
+     of the current value and reacts when it changes. */
+  var place = P.get();
 
   /* ------------------------------------------------------------------ */
   /*  Helpers                                                            */
@@ -89,91 +49,6 @@
     return date.toLocaleDateString(CSM.t('locale'), { weekday: 'short' }) + ' ';
   }
 
-  function showError(key, detail) {
-    var el = $('place-err');
-    el.textContent = detail ? CSM.t(key) + ' ' + detail : CSM.t(key);
-    el.hidden = false;
-    CSM.announce(el.textContent);
-  }
-  function clearError() { $('place-err').hidden = true; }
-
-  /* ------------------------------------------------------------------ */
-  /*  Geocoding                                                          */
-  /* ------------------------------------------------------------------ */
-
-  function search(query) {
-    var btn = $('place-submit');
-    btn.disabled = true;
-    clearError();
-    $('place-results').hidden = true;
-
-    var url = GEOCODE + '?format=jsonv2&limit=5&accept-language=' +
-      encodeURIComponent(CSM.lang()) + '&q=' + encodeURIComponent(query);
-
-    return CSM.fetchJSON(url)
-      .then(function (list) {
-        btn.disabled = false;
-        if (!list || !list.length) { showError('obs.err.none'); return; }
-        renderResults(list);
-      })
-      .catch(function () {
-        btn.disabled = false;
-        showError('obs.err.net');
-      });
-  }
-
-  var MAX_RESULTS = 5;          // what we asked for; what we will draw regardless
-
-  function renderResults(all) {
-    var ul = $('place-results');
-    ul.innerHTML = '';
-    var list = (Array.isArray(all) ? all : []).slice(0, MAX_RESULTS);
-    list.forEach(function (r) {
-      var parts = String(r && r.display_name || '').slice(0, 300).split(',');
-      var head = parts.shift().trim().slice(0, 120);
-      var sub = parts.join(',').trim().slice(0, 160);
-
-      var li = document.createElement('li');
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.appendChild(document.createTextNode(head));
-      if (sub) {
-        var s = document.createElement('span');
-        s.className = 'r-sub';
-        s.textContent = sub;
-        b.appendChild(s);
-      }
-      b.addEventListener('click', function () {
-        setPlace({ lat: parseFloat(r.lat), lon: parseFloat(r.lon), label: head, sub: sub });
-        ul.hidden = true;
-        $('place-input').value = '';
-      });
-      li.appendChild(b);
-      ul.appendChild(li);
-    });
-    ul.hidden = false;
-    CSM.announce(CSM.t('obs.results').replace('{n}', list.length));
-  }
-
-  function locate() {
-    var btn = $('locate-btn');
-    if (!navigator.geolocation) { showError('obs.err.geo'); return; }
-    clearError();
-    btn.disabled = true;
-    navigator.geolocation.getCurrentPosition(
-      function (pos) {
-        btn.disabled = false;
-        setPlace({
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          label: null,          // resolved to "your position" at paint time
-          sub: null
-        });
-      },
-      function () { btn.disabled = false; showError('obs.err.denied'); },
-      { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }
-    );
-  }
 
   /* ------------------------------------------------------------------ */
   /*  Passes                                                             */
@@ -212,42 +87,15 @@
     });
   }
 
+  /* The algorithm itself moved to astro.js when the home page needed it too;
+     this keeps the mission's own thresholds in one place. */
   function findPasses(sampleAt, t0, t1, lat, lon) {
-    var out = [], current = null;
-
-    for (var t = t0; t <= t1; t += PASS_FINE_SEC) {
-      var s = sampleAt(t);
-      if (!s) continue;
-      var look = A.lookAngles(lat, lon, s.lat, s.lon, s.alt);
-
-      if (look.elevation >= MIN_ELEVATION) {
-        if (!current) current = { start: t, maxEl: -90, azStart: look.azimuth, samples: [] };
-        if (current.samples.length < 120) {
-          current.samples.push({ az: look.azimuth, el: look.elevation });
-        }
-        if (look.elevation > current.maxEl) {
-          current.maxEl = look.elevation;
-          current.max = t;
-          current.azMax = look.azimuth;
-          current.satLat = s.lat; current.satLon = s.lon; current.satAlt = s.alt;
-        }
-        current.end = t;
-        current.azEnd = look.azimuth;
-      } else if (current) {
-        out.push(current);
-        current = null;
-        if (out.length >= 6) break;
-      }
-    }
-    if (current) out.push(current);
-
-    return out.map(function (p) {
-      var when = new Date(p.max * 1000);
-      var sub = A.subsolarPoint(when);
-      p.visible = A.isSunlit(p.satLat, p.satLon, p.satAlt, when, sub) &&
-                  A.sunElevation(lat, lon, when, sub) < TWILIGHT;
-      return p;
-    }).slice(0, 4);
+    return A.findPasses(sampleAt, t0, t1, lat, lon, {
+      minElevation: MIN_ELEVATION,
+      stepSec: PASS_FINE_SEC,
+      twilight: TWILIGHT,
+      limit: 4
+    });
   }
 
   function loadPasses(force) {
@@ -497,17 +345,13 @@
   /* A satellite whose orbit is tilted 28.5° can never climb far above the
      horizon from 45° north. That is worth saying out loud rather than leaving
      the reader to wonder why every pass is so low. */
+  /* Prefers the inclination the elements actually report over the one written
+     in the config, because the elements are the truth about this orbit. */
   function ceilingFrom(lat) {
     var prop = CSM.propagator && CSM.propagator();
     var inc = prop ? prop.inclination : CSM.sat.inclination;
-    if (!inc) return null;
     var alt = (CSM.position() || {}).altitude || CSM.sat.altKm;
-    var gap = Math.abs(lat) - inc;
-    if (gap <= 0) return 90;
-    var g = gap * Math.PI / 180;
-    var R = A.R_EARTH;
-    var el = Math.atan2(Math.cos(g) - R / (R + alt), Math.sin(g)) * 180 / Math.PI;
-    return Math.max(0, el);
+    return A.orbitCeiling(lat, inc, alt);
   }
 
   function paintCeiling() {
@@ -553,30 +397,26 @@
     paintDome();
   }
 
-  function setPlace(input) {
-    /* Same gate whether this came from the geocoder, the browser or storage. */
-    var p = sane(input);
-    if (!p) { showError('obs.err.none'); return; }
+  /* Everything that has to happen when the reader tells us where they are,
+     wherever that came from — the form, the browser, or a value another page
+     of this site stored earlier. */
+  function adopt(p) {
     place = p;
-    savePlace();
+    passes = null;
     CSM.emit('place', p);
-    clearError();
     paintPanel();
     sizeDome();
+    if (!p) return;
+
     CSM.announce(CSM.t('obs.set').replace('{place}', p.label || CSM.t('obs.you')));
     var panel = $('obs-panel');
     if (panel.setAttribute) { panel.setAttribute('tabindex', '-1'); panel.focus({ preventScroll: true }); }
-    passes = null;
     $('pass-list').innerHTML = '';
     loadPasses(true);
   }
 
   function forget() {
-    place = null;
-    passes = null;
-    savePlace();
-    CSM.emit('place', null);
-    paintPanel();
+    P.forget();
     $('place-input').focus();
   }
 
@@ -584,14 +424,12 @@
   /*  Wiring                                                             */
   /* ------------------------------------------------------------------ */
 
-  $('place-form').addEventListener('submit', function (ev) {
-    ev.preventDefault();
-    var q = $('place-input').value.trim();
-    if (q.length < 2) { showError('obs.err.short'); return; }
-    search(q);
-  });
+  P.wire({
+    form: 'place-form', input: 'place-input', results: 'place-results',
+    locate: 'locate-btn', submit: 'place-submit', error: 'place-err'
+  }, CSM.t, CSM.announce);
 
-  $('locate-btn').addEventListener('click', locate);
+  P.on(adopt);
   $('obs-change').addEventListener('click', forget);
 
   CSM.on('position', paintPanel);

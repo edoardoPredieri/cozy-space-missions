@@ -787,3 +787,162 @@ a:focus-visible, button:focus-visible, input:focus-visible{
      transition-duration: .001ms !important; }
   html{ scroll-behavior: auto; }
 }
+
+/* ==================================================================
+   The front page
+   ================================================================== */
+
+.home-hero .lede{ max-width: 56ch; }
+.home-date{
+  margin: var(--s-2) 0 0;
+  font: 400 12px/1.5 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .06em;
+  color: var(--muted);
+}
+
+#world{
+  display: block; width: 100%; height: auto;
+  aspect-ratio: 2.5 / 1;
+  border-radius: var(--r-lg);
+  background: #0b1424;
+}
+
+/* A hollow ring for the two at L2, so the legend matches the map. */
+.map-legend .k-deep{
+  width: 9px; height: 9px; border-radius: 999px;
+  border: 1.6px solid var(--amber); background: transparent;
+}
+
+/* ---- the Moon, and the Earth from there ---- */
+
+.phase-card{ text-align: center; }
+.phase-pair{
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: var(--s-4); align-items: start;
+  max-width: 520px; margin: 0 auto;
+  position: relative;
+}
+
+/* Which way the Sun is, so the drawing needs no hemisphere to make sense of. */
+.phase-pair::after{
+  content: "";
+  position: absolute; top: 6px; width: 18px; height: 18px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255,214,140,.85), rgba(255,214,140,0) 70%);
+}
+.phase-pair[data-sun="right"]::after{ right: -26px; }
+.phase-pair[data-sun="left"]::after{ left: -26px; }
+
+.phase{ margin: 0; }
+.phase canvas{
+  display: block; width: 100%; max-width: 168px; height: auto;
+  aspect-ratio: 1 / 1; margin: 0 auto var(--s-2);
+}
+.phase figcaption{ display: flex; flex-direction: column; gap: 3px; }
+.phase figcaption strong{ font-size: 15px; font-weight: 600; }
+.phase-lit{
+  font: 500 20px/1.1 "IBM Plex Mono", ui-monospace, monospace;
+  color: var(--amber);
+}
+.phase-note{ font-size: 12.5px; color: var(--muted); }
+.phase-next{
+  margin: var(--s-4) 0 0; color: var(--cream-dim); font-size: .95rem;
+}
+
+/* ---- the four, side by side ---- */
+
+.cmp-list{ list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); }
+.cmp{
+  display: grid;
+  grid-template-columns: minmax(84px, auto) minmax(0, 1fr) 150px auto;
+  grid-template-areas: "name what bar dist"
+                       "name what bar age";
+  gap: 2px var(--s-3);
+  align-items: center;
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.cmp:last-child{ border-bottom: 0; }
+.cmp-name{
+  grid-area: name;
+  font-weight: 600; font-size: 15px;
+  color: var(--cream); text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.cmp-name:hover, .cmp-name:focus-visible{ color: var(--amber); border-bottom-color: currentColor; }
+.cmp-what{ grid-area: what; color: var(--cream-dim); font-size: .88rem; }
+.cmp-bar{
+  grid-area: bar;
+  display: block; height: 4px; border-radius: 999px;
+  background: rgba(244,234,216,.08);
+  overflow: hidden;
+}
+.cmp-bar i{
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--amber-deep), var(--amber));
+  border-radius: 999px;
+}
+.cmp-dist{
+  grid-area: dist; justify-self: end;
+  font: 500 .95rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  color: var(--amber-soft);
+  font-variant-numeric: tabular-nums;
+}
+.cmp-age{ grid-area: age; justify-self: end; font-size: .78rem; color: var(--muted); }
+
+/* ---- from where you are ---- */
+
+.sky-card h4{
+  margin: var(--s-4) 0 var(--s-2);
+  font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600;
+}
+.sky-card h4:first-of-type{ margin-top: var(--s-3); }
+
+.sun-grid{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.sun-cell{
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 11px 13px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.sun-wide{ grid-column: span 4; }
+.sun-k{ font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.sun-v{
+  font: 500 1.1rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  color: var(--amber-soft); font-variant-numeric: tabular-nums;
+}
+.sun-note{ margin: var(--s-2) 0 0; color: var(--cream-dim); font-size: .9rem; line-height: 1.65; }
+
+.tonight-list{ list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
+.tn{
+  display: grid; grid-template-columns: minmax(74px, auto) 1fr;
+  gap: 2px var(--s-3); align-items: baseline;
+  padding: var(--s-2) 0; border-bottom: 1px solid var(--line);
+}
+.tn:last-child{ border-bottom: 0; }
+.tn-name{
+  font-weight: 600; font-size: .92rem; color: var(--cream);
+  text-decoration: none; border-bottom: 1px solid transparent;
+}
+.tn-name:hover, .tn-name:focus-visible{ color: var(--amber); border-bottom-color: currentColor; }
+.tn-line{ color: var(--cream-dim); font-size: .93rem; line-height: 1.65; }
+.tn.is-good .tn-line{ color: var(--cream); }
+.tn.is-good .tn-name{ color: var(--amber); }
+
+@media (max-width: 780px){
+  .cmp{
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "name dist"
+                         "what age"
+                         "bar  bar";
+    gap: 4px var(--s-3);
+  }
+  .cmp-bar{ margin-top: 4px; }
+  .sun-grid{ grid-template-columns: repeat(2, 1fr); }
+  .sun-wide{ grid-column: span 2; }
+  .phase-pair{ gap: var(--s-3); }
+  .phase-pair::after{ display: none; }
+  .tn{ grid-template-columns: 1fr; }
+}
