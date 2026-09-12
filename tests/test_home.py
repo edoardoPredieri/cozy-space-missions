@@ -7,8 +7,10 @@ The way back. Every page carries a Home link, and only the front page marks
 itself as the current one. A site whose pages have no way home is a site people
 leave.
 
-The solar view. It draws five objects around a magnified Earth at their real
-directions, which is a claim that can be checked rather than admired: the two
+The figure. It is the only view of that card — the ground map it used to share
+the card with is gone — and it draws five objects around a magnified Earth at
+their real directions, which is a claim that can be checked rather than
+admired: the two
 telescopes at L2 must sit opposite the Sun, because that is what L2 means, and
 at new Moon the Moon must sit nearly in the Sun's direction, because that is
 what new Moon means. If the coordinate conversion that puts a space station and
@@ -93,9 +95,7 @@ with sync_playwright() as p:
         errs = []
         pg.on("pageerror", lambda e: errs.append(str(e)))
         pg.goto(f"http://localhost:{PORT}/index.html", wait_until="load")
-        pg.wait_for_timeout(2600)
-        pg.click('#world-view button[data-view="solar"]')
-        pg.wait_for_timeout(900)
+        pg.wait_for_timeout(3200)
 
         # the same numbers the figure is drawn from, read back out of the page
         geom = pg.evaluate("""() => {

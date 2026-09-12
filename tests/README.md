@@ -90,8 +90,8 @@ navigation, the ladder and the roadmap are exempt by design.
 first is navigation: every page must carry a link home and exactly one entry
 marked as the current page, and home may be that entry only on the front page —
 a site whose pages have no way back is a site people leave. The second is the
-solar view, which draws five objects around a magnified Earth at their real
-directions. That is a claim that can be checked rather than admired, so it is:
+figure on the front page, which draws five objects around a magnified Earth at
+their real directions. That is a claim that can be checked rather than admired, so it is:
 the two telescopes must sit more than 150° from the Sun, because that is what L2
 means, and the Moon must sit within 25° of the Sun a day after new and more than
 155° away at full. If the conversion that puts a space station and a telescope a

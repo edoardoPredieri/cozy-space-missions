@@ -100,20 +100,11 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /*  The map                                                            */
+  /*  The figure                                                         */
   /* ------------------------------------------------------------------ */
 
   var cv = $('world'), ctx = cv ? cv.getContext('2d') : null;
-  var W = 0, H = 0, LAT_MAX = 90;
-
-  /* Two ways of looking at the same instant. On the ground each mission is a
-     point on a map; in the solar system all five of them are inside one dot,
-     which is the more honest and the more surprising picture — so that view
-     magnifies the dot rather than pretending otherwise. */
-  var view = 'ground';
-
-  function px(lon) { return (lon + 180) / 360 * W; }
-  function py(lat) { return (1 - (lat + LAT_MAX) / (2 * LAT_MAX)) * H; }
+  var W = 0, H = 0;
 
   function sizeMap() {
     if (!cv) return;
@@ -121,7 +112,6 @@
     var rect = cv.getBoundingClientRect();
     W = Math.max(300, Math.round(rect.width));
     H = Math.max(120, Math.round(rect.height));
-    LAT_MAX = Math.min(90, 180 * H / W);
     cv.width = Math.round(W * dpr);
     cv.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -130,89 +120,8 @@
 
   function drawMap() {
     if (!ctx || !W) return;
-    if (view === 'solar') { drawSolarView(); return; }
-    var now = new Date();
-    ctx.clearRect(0, 0, W, H);
-
-    var g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#0c1830');
-    g.addColorStop(0.55, '#0e1c34');
-    g.addColorStop(1, '#0b1526');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-
-    window.GLOBE.paintLand(ctx, px, py);
-    drawNight(now);
-
-    // the four, each on its own point on the ground
-    FLEET.forEach(function (sat) {
-      var f = fixes[sat.id];
-      if (!f) return;
-      var x = px(f.subLon), y = py(f.subLat);
-      var deep = sat.kind === 'deep';
-
-      var glow = ctx.createRadialGradient(x, y, 0, x, y, deep ? 13 : 17);
-      glow.addColorStop(0, 'rgba(232,163,74,.42)');
-      glow.addColorStop(1, 'rgba(232,163,74,0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath(); ctx.arc(x, y, deep ? 13 : 17, 0, Math.PI * 2); ctx.fill();
-
-      /* Hollow for the far two, solid for the near two: the same mark would
-         say the two kinds are the same kind of thing, and they are not. */
-      if (deep) {
-        ctx.strokeStyle = '#e8a34a';
-        ctx.lineWidth = 1.6;
-        ctx.beginPath(); ctx.arc(x, y, 3.6, 0, Math.PI * 2); ctx.stroke();
-      } else {
-        ctx.fillStyle = '#e8a34a';
-        ctx.beginPath(); ctx.arc(x, y, 3.8, 0, Math.PI * 2); ctx.fill();
-      }
-
-      ctx.font = '600 10.5px "Inter", system-ui, sans-serif';
-      ctx.textAlign = x > W - 70 ? 'right' : 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#f3c98f';
-      ctx.fillText(CSM.t(sat.id + '.sat.short') || sat.id,
-                   x > W - 70 ? x - 9 : x + 9, y - 9);
-    });
-
-    // and the reader, if they have said where they are
-    var place = P.get();
-    if (place) {
-      var ux = px(place.lon), uy = py(place.lat);
-      ctx.strokeStyle = 'rgba(159,216,221,.9)';
-      ctx.lineWidth = 1.4;
-      ctx.beginPath(); ctx.arc(ux, uy, 4.6, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = 'rgba(159,216,221,.35)';
-      ctx.beginPath(); ctx.arc(ux, uy, 2, 0, Math.PI * 2); ctx.fill();
-    }
+    drawSolarView();
   }
-
-  /* Night, drawn three ways so it never reads by colour alone: a fill, the
-     city lights inside it, and the shape of the terminator itself. */
-  function drawNight(now) {
-    var sub = A.subsolarPoint(now);
-    var G = window.GLOBE;
-
-    ctx.save();
-    G.nightPath(ctx, px, py, W, H, sub.lat, sub.lon);
-    ctx.fillStyle = 'rgba(4,8,18,.46)';
-    ctx.fill();
-    ctx.clip();
-    G.paintCityLights(ctx, px, py);
-    ctx.restore();
-
-    var line = G.terminator(sub.lat, sub.lon);
-    ctx.strokeStyle = 'rgba(243,201,143,.34)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (var i = 0; i < line.length; i++) {
-      var x = px(line[i][0]), y = py(line[i][1]);
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  }
-
 
   /* ------------------------------------------------------------------ */
   /*  The same moment, from much further back                            */
@@ -292,16 +201,22 @@
 
     var p = A.planets(now);
 
-    /* Two panels that do not touch: the system on the left at true scale, the
-       Earth's own surroundings on the right, magnified. */
-    var sx = W * 0.25, sy = H * 0.5;
-    var R = Math.min(W * 0.205, H * 0.42);
+    /* Two panels that do not touch: the system at true scale, and the Earth's
+       own surroundings magnified. Side by side where there is width for it;
+       one above the other on a phone, where side by side would put the Sun's
+       label through the ring labels and push Webb off the edge.
+
+       Room is left outside both circles on purpose: the things furthest out
+       sit near the rim, and their names have to go somewhere. */
+    var narrow = W < 660;
+    var sx = narrow ? W * 0.5 : W * 0.25;
+    var sy = narrow ? H * 0.235 : H * 0.5;
+    var R = narrow ? Math.min(W * 0.30, H * 0.185) : Math.min(W * 0.205, H * 0.42);
     var scale = R / NEPTUNE_AU;
 
-    /* Room is left outside the circle on purpose: the things furthest out sit
-       near its rim, and their names have to go somewhere. */
-    var ix = W * 0.72, iy = H * 0.5;
-    var IR = Math.min(W * 0.185, H * 0.37);
+    var ix = narrow ? W * 0.5 : W * 0.72;
+    var iy = narrow ? H * 0.70 : H * 0.5;
+    var IR = narrow ? Math.min(W * 0.345, H * 0.245) : Math.min(W * 0.185, H * 0.37);
 
     c.textBaseline = 'middle';
 
@@ -342,6 +257,7 @@
         var w = c.measureText(label).width;
         var lx = x < sx ? x - w / 2 - 7 : x + w / 2 + 7;
         if (lx + w / 2 > sx + R + 26) lx = x - w / 2 - 7;
+        lx = Math.max(w / 2 + 3, Math.min(W - w / 2 - 3, lx));
         if (placeSolar(lx, y, w, 11)) {
           c.fillStyle = b.key === 'earth' ? '#cfe2fb' : 'rgba(211,200,181,.7)';
           c.textAlign = 'center';
@@ -780,8 +696,6 @@
     var ask = $('home-ask'), panel = $('home-sky');
     if (ask) ask.hidden = has;
     if (panel) panel.hidden = !has;
-    var chip = $('legend-you');
-    if (chip) chip.hidden = !has;
     if (!has) return;
 
     set('home-place', place.label || CSM.t('obs.you'));
@@ -819,38 +733,12 @@
     paintTonight();
   }
 
-  P.on(function () { paintPlace(); drawMap(); });
-  CSM.on('lang', function () { paintPhases(); paintCompare(); paintPlace(); syncView(); drawMap(); });
+  P.on(paintPlace);
+  CSM.on('lang', function () { paintPhases(); paintCompare(); paintPlace(); drawMap(); });
   CSM.onResize(function () { sizeMap(); paintPhases(); });
 
   set('home-date', new Date().toLocaleDateString(CSM.t('locale'),
       { weekday: 'long', day: 'numeric', month: 'long' }));
-
-  var switcher = $('world-view');
-  if (switcher) {
-    switcher.addEventListener('click', function (ev) {
-      var b = ev.target.closest ? ev.target.closest('button[data-view]') : null;
-      if (!b) return;
-      view = b.getAttribute('data-view');
-      var wrap = document.querySelector('.map-wrap');
-      if (wrap) wrap.classList.toggle('is-solar', view === 'solar');
-      syncView();
-      sizeMap();
-    });
-  }
-
-  function syncView() {
-    if (!switcher) return;
-    var btns = switcher.querySelectorAll('button[data-view]');
-    for (var i = 0; i < btns.length; i++) {
-      var on = btns[i].getAttribute('data-view') === view;
-      btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
-      btns[i].classList.toggle('is-on', on);
-    }
-    var cap = $('world-cap');
-    if (cap) cap.innerHTML = CSM.t(view === 'solar' ? 'home.solar.cap' : 'home.map.cap');
-    if (cv) cv.setAttribute('aria-label', CSM.t(view === 'solar' ? 'home.solar.alt' : 'home.map.alt'));
-  }
 
   P.wire({
     form: 'home-form', input: 'home-input', results: 'home-results',
@@ -866,7 +754,6 @@
     });
   }
 
-  syncView();
   sizeMap();
   paintPhases();
   refreshFixes();

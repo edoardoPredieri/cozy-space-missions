@@ -16,22 +16,18 @@ A static page — no framework, no build step. English by default, Italian one c
 The four mission pages each answer one mission's question well. The front page answers the question
 you have before you pick one: what is up there, and is any of it worth going outside for.
 
-**All of them, at once.** One world map, four marks — each the point on the ground that mission is
-directly above, the one place it sits at the zenith. That works for something four hundred
-kilometres up and for something a million and a quarter kilometres out, which is what lets all four
-share a map. The two in orbit cross it in an hour and a half; the two at L2 just turn with the
-Earth, once a day, and are always on the midnight side, because that is where the anti-Sun
-direction points.
+**All of them, at once.** One figure, the whole fleet, drawn from live positions: the solar system
+seen from above — the Sun and the eight planets where they actually are today — and, in a circle of
+its own, the Earth magnified enough to hold everything that orbits close. The Moon, the Station,
+Hubble, Webb and Roman each sit at their true direction from the Earth, at a distance drawn on a
+ten-times scale, because otherwise the Station would be a pixel from the centre while Webb sat off
+the page. A line points at the Sun, and that line is what makes the rest readable: the Moon's phase,
+the two telescopes sitting opposite, the Station crossing the day side all turn out to be the same
+fact seen from different angles. A filled mark goes round the Earth; a hollow one is far out at L2.
 
-**Or the same moment from outside.** A second view of the same card swaps the map for the solar
-system seen from above — the Sun, the eight planets in today's real positions, and the Earth among
-them — with a magnified inset beside it holding everything that orbits close: the Moon, the Station,
-Hubble, Webb and Roman, each at its true direction from the Earth and on a ten-times radial scale,
-because otherwise the Station would be a pixel from the centre while Webb sat off the page. A line
-points at the Sun, which is the one thing that makes the picture readable: the Moon's phase, the two
-telescopes sitting opposite, and the Station crossing the day side all become the same fact seen
-from a different angle. Both views are drawn from the same live positions the map uses, and the
-figure is redrawn as they update.
+The two panels sit side by side where there is width for them and stack on a phone, which is the
+only thing about the picture that changes with the screen. Everything else — the directions, the
+scale, what is drawn at all — is the same everywhere.
 
 **The Moon tonight, and the Earth from there.** Both discs are drawn at their real phase, lit from
 the same side, because the same Sun lights both and the lit limb points at it whichever one you are
@@ -139,9 +135,9 @@ hubble.html         Hubble — same structure, different mission
 webb.html           Webb, out at L2
 roman.html          Roman, on its way out to L2
 assets/config.js    what differs between missions: kind, source, orbit, news search
-assets/globe.js     coastlines and the day/night line, shared by every map
+assets/globe.js     coastlines and the day/night line, shared by the mission maps
 assets/place.js     where the reader is: storage, geocoding, the rules about both
-assets/home.js      the front page — the shared map, the phases, tonight
+assets/home.js      the front page — the whole-fleet figure, the phases, tonight
 assets/style.css    "warm night / observatory": tokens, grain, cards
 assets/i18n.js      every string, English and Italian
 assets/astro.js     sun and moon position, look angles, track interpolation, planet ephemeris

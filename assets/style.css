@@ -162,6 +162,7 @@ main, .site-head, .site-foot{ position: relative; z-index: 1; }
   box-shadow: var(--inset);
 }
 .missions a{
+  position: relative;
   display: inline-flex; align-items: center;
   min-height: 32px; padding: 0 14px;
   border-radius: 999px;
@@ -174,6 +175,27 @@ main, .site-head, .site-foot{ position: relative; z-index: 1; }
 }
 .missions a:hover{ color: var(--cream-dim); }
 .missions a.is-on{ background: rgba(232,163,74,.16); color: var(--amber-soft); }
+
+/* Home is not a fifth mission. It is the way back to all of them, so it wears a
+   ring and a roof of its own and stands just outside the group rather than
+   hiding inside it — on the four mission pages, where it matters, and on the
+   front page, where it also has to look like the page you are on. */
+.missions a.nav-home{
+  gap: 6px; margin-right: 9px;
+  color: var(--cream-dim);
+  background: rgba(232,163,74,.08);
+  box-shadow: inset 0 0 0 1px rgba(232,163,74,.34);
+}
+.missions a.nav-home:hover{ color: var(--cream); background: rgba(232,163,74,.15); }
+.missions a.nav-home.is-on{
+  background: rgba(232,163,74,.20); color: var(--amber-soft);
+  box-shadow: inset 0 0 0 1px rgba(232,163,74,.5);
+}
+.missions a.nav-home::after{
+  content: ""; position: absolute; right: -5px; top: 7px; bottom: 7px;
+  width: 1px; background: var(--line);
+}
+.nav-ico{ width: 12px; height: 12px; flex: none; color: var(--amber-soft); }
 
 .lang{
   display: inline-flex; gap: 2px; flex: none;
@@ -803,16 +825,19 @@ a:focus-visible, button:focus-visible, input:focus-visible{
   color: var(--muted);
 }
 
+/* Wider than tall, but not as wide as a world map: the solar system on one
+   side and the magnified Earth on the other both need room to breathe, and the
+   names have to fit outside their circles. On a phone the two panels stack, so
+   the frame turns the other way up to give them the height to do it. */
 #world{
   display: block; width: 100%; height: auto;
-  aspect-ratio: 2.5 / 1;
+  aspect-ratio: 2 / 1;
   border-radius: var(--r-lg);
   background: #0b1424;
 }
-/* The solar system needs height the world map does not. */
-.map-wrap.is-solar #world{ aspect-ratio: 2 / 1; }
-.map-wrap.is-solar .map-legend{ display: none; }
-#world-view{ margin: 0 0 var(--s-2); }
+@media (max-width: 660px){
+  #world{ aspect-ratio: 0.82 / 1; }
+}
 
 /* A hollow ring for the two at L2, so the legend matches the map. */
 .map-legend .k-deep{
