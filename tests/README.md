@@ -12,13 +12,15 @@ python3 tests/test_solar.py     # each page shows its own mission in the neighbo
 python3 tests/test_ladder.py    # nothing vanishes from the distance ladder
 python3 tests/test_phase.py     # the Moon disc shows the fraction the page claims
 python3 tests/test_missions.py  # each page speaks only for itself
+python3 tests/test_home.py      # there is a way home, and the solar view is honest
+python3 tests/test_future.py    # the pages age honestly once the table runs out
 node    tests/sgp4check.mjs     # the propagator agrees with the official vectors
 ```
 
 Each Python test serves the repo on a local port and drives it with a real
 browser; none of them need the internet, because every outside call is stubbed.
 
-**`test_csp.py`** loads all four pages with a `securitypolicyviolation` listener
+**`test_csp.py`** loads all five pages with a `securitypolicyviolation` listener
 attached and asserts zero violations, then checks that the things the policy
 could plausibly have broken still work: the vendored ES modules, the stylesheet,
 the canvases, the right mission on the right page.
@@ -83,6 +85,23 @@ override falls back to one written for the Space Station. Copy written *per
 mission* may name whoever it likes — that Roman carries a mirror the same size
 as Hubble's is the comparison NASA leads with — so the hero, the captions, the
 navigation, the ladder and the roadmap are exempt by design.
+
+**`test_home.py`** covers the two things only the front page can get wrong. The
+first is navigation: every page must carry a link home and exactly one entry
+marked as the current page, and home may be that entry only on the front page —
+a site whose pages have no way back is a site people leave. The second is the
+solar view, which draws five objects around a magnified Earth at their real
+directions. That is a claim that can be checked rather than admired, so it is:
+the two telescopes must sit more than 150° from the Sun, because that is what L2
+means, and the Moon must sit within 25° of the Sun a day after new and more than
+155° away at full. If the conversion that puts a space station and a telescope a
+million kilometres away into one frame were wrong, those are the facts that would
+break first.
+
+**`test_future.py`** winds the clock past the end of the shipped JPL table and
+checks that the L2 pages fall back to the computed L2 point, relabel the source
+instead of still crediting Horizons, and leave blank the one number they can no
+longer know — the rate of change — rather than guessing it.
 
 **`sgp4check.mjs`** runs the two official Space-Track Report #3 test cases
 through the vendored propagator. `spacetrack-report-3.json` is copied from

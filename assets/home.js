@@ -106,6 +106,12 @@
   var cv = $('world'), ctx = cv ? cv.getContext('2d') : null;
   var W = 0, H = 0, LAT_MAX = 90;
 
+  /* Two ways of looking at the same instant. On the ground each mission is a
+     point on a map; in the solar system all five of them are inside one dot,
+     which is the more honest and the more surprising picture — so that view
+     magnifies the dot rather than pretending otherwise. */
+  var view = 'ground';
+
   function px(lon) { return (lon + 180) / 360 * W; }
   function py(lat) { return (1 - (lat + LAT_MAX) / (2 * LAT_MAX)) * H; }
 
@@ -124,6 +130,7 @@
 
   function drawMap() {
     if (!ctx || !W) return;
+    if (view === 'solar') { drawSolarView(); return; }
     var now = new Date();
     ctx.clearRect(0, 0, W, H);
 
@@ -204,6 +211,290 @@
       if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
+  }
+
+
+  /* ------------------------------------------------------------------ */
+  /*  The same moment, from much further back                            */
+  /* ------------------------------------------------------------------ */
+
+  /* Every mission on this site is within about a million and a quarter
+     kilometres of the Earth. On a diagram that reaches Neptune, that is a
+     fifth of a pixel. Rather than quietly drop them, or quietly lie about the
+     scale, the picture says both things at once: the solar system at true
+     scale on the left, and the Earth's own surroundings magnified on the
+     right, with distances on a ten-times scale so that four hundred
+     kilometres and a million can share one frame.
+
+     Both halves use the same directions — longitude around the plane the
+     planets share — so the Sun is in the same direction in each, and you can
+     see for yourself that Webb and Roman sit on the far side of us from it. */
+
+  var NEPTUNE_AU = 30.1;
+  var NEAR_MIN_KM = 200;              // below the lowest thing that stays up
+  var NEAR_MAX_KM = 1.8e6;            // past L2
+
+  function nearRadius(heightKm, R) {
+    var lo = Math.log10(NEAR_MIN_KM), hi = Math.log10(NEAR_MAX_KM);
+    var f = (Math.log10(Math.max(NEAR_MIN_KM, heightKm)) - lo) / (hi - lo);
+    return 10 + f * (R - 10);
+  }
+
+  /* Everything near the Earth, in one list: how high and which way. */
+  function neighbours(now) {
+    var out = [];
+    var m = A.moon(now);
+    out.push({ key: 'planet.moon', lon: m.lon, km: m.distance - R_EARTH,
+               color: '#cdd5e4', size: 2.6 });
+
+    FLEET.forEach(function (sat) {
+      var f = fixes[sat.id];
+      if (!f) return;
+      var lon;
+      if (sat.kind === 'deep') {
+        var d = deepDirection(sat, now);
+        if (!d) return;
+        lon = d.lon;
+      } else {
+        lon = A.directionOverGround(f.subLat, f.subLon, now).lon;
+      }
+      out.push({
+        key: sat.id + '.sat.short', lon: lon,
+        km: sat.kind === 'deep' ? f.km - R_EARTH : f.km,
+        color: '#e8a34a', size: 3.2, hollow: sat.kind === 'deep', sat: sat
+      });
+    });
+    return out;
+  }
+
+  /* The far missions are stored in the plane of the planets already, so their
+     direction needs no conversion — just the same interpolation the map uses. */
+  function deepDirection(sat, now) {
+    var table = window.EPHEM && window.EPHEM[sat.ephem];
+    if (!table || !table.samples || !table.samples.length) return null;
+    var t = now.getTime() / 1000, s = table.samples;
+    if (t < s[0][0] || t > s[s.length - 1][0]) return null;
+    var i = 0;
+    while (i < s.length - 2 && s[i + 1][0] < t) i++;
+    var f = (t - s[i][0]) / (s[i + 1][0] - s[i][0]);
+    var d = ((s[i + 1][2] - s[i][2] + 540) % 360) - 180;
+    return { lon: s[i][2] + f * d };
+  }
+
+  function drawSolarView() {
+    var c = ctx, now = new Date();
+    c.clearRect(0, 0, W, H);
+    var g = c.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0a1226');
+    g.addColorStop(1, '#080e1d');
+    c.fillStyle = g;
+    c.fillRect(0, 0, W, H);
+
+    var p = A.planets(now);
+
+    /* Two panels that do not touch: the system on the left at true scale, the
+       Earth's own surroundings on the right, magnified. */
+    var sx = W * 0.25, sy = H * 0.5;
+    var R = Math.min(W * 0.205, H * 0.42);
+    var scale = R / NEPTUNE_AU;
+
+    /* Room is left outside the circle on purpose: the things furthest out sit
+       near its rim, and their names have to go somewhere. */
+    var ix = W * 0.72, iy = H * 0.5;
+    var IR = Math.min(W * 0.185, H * 0.37);
+
+    c.textBaseline = 'middle';
+
+    /* ---- the solar system ---- */
+
+    A.PLANETS.forEach(function (b) {
+      var e = p[b.key];
+      c.strokeStyle = b.key === 'earth' ? 'rgba(127,176,232,.38)' : 'rgba(244,234,216,.10)';
+      c.lineWidth = 1;
+      c.beginPath(); c.arc(sx, sy, e.a * scale, 0, Math.PI * 2); c.stroke();
+    });
+
+    var sun = c.createRadialGradient(sx, sy, 0, sx, sy, 13);
+    sun.addColorStop(0, 'rgba(255,214,140,.9)');
+    sun.addColorStop(1, 'rgba(255,214,140,0)');
+    c.fillStyle = sun;
+    c.beginPath(); c.arc(sx, sy, 13, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#ffd68c';
+    c.beginPath(); c.arc(sx, sy, 3, 0, Math.PI * 2); c.fill();
+
+    var e = p.earth;
+    var ex = sx + e.x * scale, ey = sy - e.y * scale;
+
+    /* Only the outermost planets get named here: everything inside Jupiter is
+       a couple of pixels from the Sun at this scale, and four labels on top of
+       each other say less than none. The Earth is named because it is the one
+       the rest of the picture is about. */
+    var placeSolar = Labeller(16);
+    c.font = '500 10px "Inter", system-ui, sans-serif';
+    A.PLANETS.forEach(function (b) {
+      var q = p[b.key];
+      var x = sx + q.x * scale, y = sy - q.y * scale;
+      c.fillStyle = b.color;
+      c.beginPath(); c.arc(x, y, b.key === 'earth' ? 3.2 : 2.2, 0, Math.PI * 2); c.fill();
+      if (b.key === 'earth' || b.key === 'jupiter' || b.key === 'saturn' ||
+          b.key === 'uranus' || b.key === 'neptune') {
+        var label = CSM.t('planet.' + b.key);
+        var w = c.measureText(label).width;
+        var lx = x < sx ? x - w / 2 - 7 : x + w / 2 + 7;
+        if (lx + w / 2 > sx + R + 26) lx = x - w / 2 - 7;
+        if (placeSolar(lx, y, w, 11)) {
+          c.fillStyle = b.key === 'earth' ? '#cfe2fb' : 'rgba(211,200,181,.7)';
+          c.textAlign = 'center';
+          c.fillText(label, lx, y);
+        }
+      }
+    });
+
+    // a ring round the Earth, so the eye finds what the magnifier is about
+    c.strokeStyle = 'rgba(127,176,232,.8)';
+    c.lineWidth = 1;
+    c.beginPath(); c.arc(ex, ey, 7, 0, Math.PI * 2); c.stroke();
+
+    /* ---- the magnified Earth ---- */
+
+    var dx = ix - ex, dy = iy - ey;
+    var d = Math.hypot(dx, dy) || 1;
+    var nx = -dy / d, ny = dx / d;
+    c.strokeStyle = 'rgba(244,234,216,.14)';
+    c.lineWidth = 1;
+    c.setLineDash([3, 4]);
+    [1, -1].forEach(function (side) {
+      c.beginPath();
+      c.moveTo(ex + nx * side * 7, ey + ny * side * 7);
+      c.lineTo(ix + nx * side * IR, iy + ny * side * IR);
+      c.stroke();
+    });
+    c.setLineDash([]);
+
+    c.fillStyle = 'rgba(9,16,34,.95)';
+    c.beginPath(); c.arc(ix, iy, IR, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = 'rgba(244,234,216,.22)';
+    c.beginPath(); c.arc(ix, iy, IR, 0, Math.PI * 2); c.stroke();
+
+    /* Rings every ten times, labelled down the lower left where nothing of
+       ours tends to sit. */
+    c.font = '400 9px "IBM Plex Mono", ui-monospace, monospace';
+    var labelAngle = Math.PI * 0.75;
+    [1e3, 1e4, 1e5, 1e6].forEach(function (km) {
+      var r = nearRadius(km, IR);
+      if (r > IR - 3) return;
+      c.strokeStyle = 'rgba(244,234,216,.09)';
+      c.setLineDash([2, 5]);
+      c.beginPath(); c.arc(ix, iy, r, 0, Math.PI * 2); c.stroke();
+      c.setLineDash([]);
+      c.fillStyle = 'rgba(147,158,180,.75)';
+      c.textAlign = 'center';
+      c.fillText(km >= 1e6 ? CSM.fmt(km / 1e6, 0) + ' ' + CSM.t('unit.mkm')
+                           : CSM.fmt(km, 0) + ' ' + CSM.t('unit.km'),
+                 ix + Math.cos(labelAngle) * r, iy - Math.sin(labelAngle) * r);
+    });
+
+    /* One labeller for everything inside this circle, so the Sun's name and a
+       telescope's cannot both claim the same patch — which they will try to,
+       because at new Moon the Moon really is in the Sun's direction. */
+    var place = Labeller(15);
+
+    // which way the Sun is, so the far two explain themselves
+    var sunLon = A.sunLongitude(now) * Math.PI / 180;
+    var ax = ix + Math.cos(sunLon) * (IR - 2), ay = iy - Math.sin(sunLon) * (IR - 2);
+    c.strokeStyle = 'rgba(255,214,140,.45)';
+    c.lineWidth = 1.2;
+    c.beginPath(); c.moveTo(ix, iy); c.lineTo(ax, ay); c.stroke();
+    c.font = '500 9.5px "Inter", system-ui, sans-serif';
+    var sunLabel = CSM.t('planet.sun');
+    var sw = c.measureText(sunLabel).width;
+    var slx = ix + Math.cos(sunLon) * (IR + 16);
+    var sly = iy - Math.sin(sunLon) * (IR + 16);
+    slx = Math.max(sw / 2 + 3, Math.min(W - sw / 2 - 3, slx));
+    place(slx, sly, sw, 11);
+    c.fillStyle = 'rgba(255,214,140,.9)';
+    c.textAlign = 'center';
+    c.fillText(sunLabel, slx, sly);
+
+    c.fillStyle = '#6fa8e6';
+    c.beginPath(); c.arc(ix, iy, 5, 0, Math.PI * 2); c.fill();
+
+    // the Earth's own name, booked before anything can land on it
+    c.font = '500 9.5px "Inter", system-ui, sans-serif';
+    var earthLabel = CSM.t('planet.earth');
+    place(ix, iy + 15, c.measureText(earthLabel).width, 11);
+    c.fillStyle = 'rgba(207,226,251,.92)';
+    c.textAlign = 'center';
+    c.fillText(earthLabel, ix, iy + 15);
+
+    /* Everyone else, furthest first, so when two labels want the same corner
+       the one further out — the one the reader is least able to guess — keeps
+       it. Labels sit radially outward from their dot, which spreads them the
+       way the diagram already spreads the dots. */
+    var list = neighbours(now).sort(function (a, b) { return b.km - a.km; });
+
+    list.forEach(function (n) {
+      var r = nearRadius(n.km, IR);
+      var a = n.lon * Math.PI / 180;
+      var x = ix + Math.cos(a) * r, y = iy - Math.sin(a) * r;
+
+      var glow = c.createRadialGradient(x, y, 0, x, y, 9);
+      glow.addColorStop(0, n.color === '#e8a34a' ? 'rgba(232,163,74,.42)' : 'rgba(205,213,228,.32)');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = glow;
+      c.beginPath(); c.arc(x, y, 9, 0, Math.PI * 2); c.fill();
+
+      if (n.hollow) {
+        c.strokeStyle = n.color; c.lineWidth = 1.5;
+        c.beginPath(); c.arc(x, y, n.size, 0, Math.PI * 2); c.stroke();
+      } else {
+        c.fillStyle = n.color;
+        c.beginPath(); c.arc(x, y, n.size, 0, Math.PI * 2); c.fill();
+      }
+
+      c.font = '600 10px "Inter", system-ui, sans-serif';
+      var label = CSM.t(n.key);
+      var w = c.measureText(label).width;
+
+      /* Outward from the centre, and far enough out that the label's own box
+         clears the dot rather than sitting on it — which means allowing for
+         half the text's width when the direction is mostly sideways. A short
+         leader line is drawn when it had to go a long way. */
+      var clear = n.size + 7 + Math.abs(Math.cos(a)) * w / 2;
+      for (var push = 0; push <= 30; push += 8) {
+        var lx = x + Math.cos(a) * (clear + push);
+        var ly = y - Math.sin(a) * (clear + push);
+        lx = Math.max(w / 2 + 3, Math.min(W - w / 2 - 3, lx));
+        ly = Math.max(9, Math.min(H - 9, ly));
+        if (!place(lx, ly, w, 11)) continue;
+        if (push > 8) {
+          c.strokeStyle = 'rgba(244,234,216,.20)';
+          c.lineWidth = 0.8;
+          c.beginPath();
+          c.moveTo(x + Math.cos(a) * (n.size + 2), y - Math.sin(a) * (n.size + 2));
+          c.lineTo(x + Math.cos(a) * (clear + push - 6), y - Math.sin(a) * (clear + push - 6));
+          c.stroke();
+        }
+        c.fillStyle = n.color === '#e8a34a' ? '#f3c98f' : 'rgba(215,222,236,.92)';
+        c.textAlign = 'center';
+        c.fillText(label, lx, ly);
+        break;
+      }
+    });
+  }
+
+  /* Keeps two labels off each other, first come first served. */
+  function Labeller(pad) {
+    var taken = [];
+    return function (x, y, w, h) {
+      for (var i = 0; i < taken.length; i++) {
+        var t = taken[i];
+        if (Math.abs(x - t.x) * 2 < (w + t.w + pad) &&
+            Math.abs(y - t.y) * 2 < (h + t.h + pad)) return false;
+      }
+      taken.push({ x: x, y: y, w: w, h: h });
+      return true;
+    };
   }
 
   /* ------------------------------------------------------------------ */
@@ -529,11 +820,37 @@
   }
 
   P.on(function () { paintPlace(); drawMap(); });
-  CSM.on('lang', function () { paintPhases(); paintCompare(); paintPlace(); drawMap(); });
+  CSM.on('lang', function () { paintPhases(); paintCompare(); paintPlace(); syncView(); drawMap(); });
   CSM.onResize(function () { sizeMap(); paintPhases(); });
 
   set('home-date', new Date().toLocaleDateString(CSM.t('locale'),
       { weekday: 'long', day: 'numeric', month: 'long' }));
+
+  var switcher = $('world-view');
+  if (switcher) {
+    switcher.addEventListener('click', function (ev) {
+      var b = ev.target.closest ? ev.target.closest('button[data-view]') : null;
+      if (!b) return;
+      view = b.getAttribute('data-view');
+      var wrap = document.querySelector('.map-wrap');
+      if (wrap) wrap.classList.toggle('is-solar', view === 'solar');
+      syncView();
+      sizeMap();
+    });
+  }
+
+  function syncView() {
+    if (!switcher) return;
+    var btns = switcher.querySelectorAll('button[data-view]');
+    for (var i = 0; i < btns.length; i++) {
+      var on = btns[i].getAttribute('data-view') === view;
+      btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+      btns[i].classList.toggle('is-on', on);
+    }
+    var cap = $('world-cap');
+    if (cap) cap.innerHTML = CSM.t(view === 'solar' ? 'home.solar.cap' : 'home.map.cap');
+    if (cv) cv.setAttribute('aria-label', CSM.t(view === 'solar' ? 'home.solar.alt' : 'home.map.alt'));
+  }
 
   P.wire({
     form: 'home-form', input: 'home-input', results: 'home-results',
@@ -549,6 +866,7 @@
     });
   }
 
+  syncView();
   sizeMap();
   paintPhases();
   refreshFixes();

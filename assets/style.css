@@ -751,6 +751,9 @@ a:focus-visible, button:focus-visible, input:focus-visible{
   :root{ --s-5: 40px; --s-6: 56px; }
   .site-head{ flex-wrap: wrap; }
   .head-right{ width: 100%; justify-content: flex-start; }
+  /* Five destinations will not sit on one line on a phone. The pill group keeps
+     its shape and takes a second row rather than pushing the page sideways. */
+  .missions{ flex-wrap: wrap; width: 100%; gap: 2px 4px; border-radius: 18px; }
   .hero{ padding: var(--s-3) 0 var(--s-3); }
   .stats, .obs-stats, .stats-deep{ grid-template-columns: repeat(2, 1fr); }
   .stat-wide{ grid-column: span 2; }
@@ -806,6 +809,10 @@ a:focus-visible, button:focus-visible, input:focus-visible{
   border-radius: var(--r-lg);
   background: #0b1424;
 }
+/* The solar system needs height the world map does not. */
+.map-wrap.is-solar #world{ aspect-ratio: 2 / 1; }
+.map-wrap.is-solar .map-legend{ display: none; }
+#world-view{ margin: 0 0 var(--s-2); }
 
 /* A hollow ring for the two at L2, so the legend matches the map. */
 .map-legend .k-deep{

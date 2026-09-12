@@ -181,6 +181,19 @@ window.ASTRO = (function () {
     };
   }
 
+  /* How big each planet is and what it looks like: reference data, kept beside
+     the elements so every figure that draws them agrees. */
+  var PLANETS = [
+    { key: 'mercury', radiusKm: 2440,  color: '#9aa3b4' },
+    { key: 'venus',   radiusKm: 6052,  color: '#e6c894' },
+    { key: 'earth',   radiusKm: 6371,  color: '#6fa8e6' },
+    { key: 'mars',    radiusKm: 3390,  color: '#d2795a' },
+    { key: 'jupiter', radiusKm: 69911, color: '#d9b28c' },
+    { key: 'saturn',  radiusKm: 58232, color: '#e3cf9e' },
+    { key: 'uranus',  radiusKm: 25362, color: '#9fd8dd' },
+    { key: 'neptune', radiusKm: 24622, color: '#6f8ede' }
+  ];
+
   /* Heliocentric ecliptic positions, in AU, for the inner planets. */
   function planets(date) {
     var T = (julianDay(date) - 2451545.0) / 36525;
@@ -290,6 +303,28 @@ window.ASTRO = (function () {
       Math.cos(l)
     );
     return { ra: norm360(ra * R2D), dec: dec * R2D };
+  }
+
+  /* And back the other way, so something reported as a place on the ground can
+     be compared with something reported in the plane of the planets. */
+  function equatorialToEcliptic(raDeg, decDeg, date) {
+    var n = julianDay(date) - 2451545.0;
+    var eps = (23.439 - 0.0000004 * n) * D2R;
+    var a = raDeg * D2R, d = decDeg * D2R;
+    var sinB = Math.sin(d) * Math.cos(eps) - Math.cos(d) * Math.sin(eps) * Math.sin(a);
+    var b = Math.asin(Math.max(-1, Math.min(1, sinB)));
+    var l = Math.atan2(
+      Math.sin(a) * Math.cos(eps) + Math.tan(d) * Math.sin(eps),
+      Math.cos(a)
+    );
+    return { lon: norm360(l * R2D), lat: b * R2D };
+  }
+
+  /* The direction of something sitting over a given point on the ground, in the
+     same frame the far missions are reported in — which is what lets a space
+     station and a telescope a million kilometres away appear on one diagram. */
+  function directionOverGround(lat, lon, date) {
+    return equatorialToEcliptic(norm360(lon + gmst(date)), lat, date);
   }
 
   /* The place on Earth this thing is directly above — the one spot where it
@@ -515,6 +550,9 @@ window.ASTRO = (function () {
     gmst: gmst,
     eclipticToEquatorial: eclipticToEquatorial,
     subPoint: subPoint,
+    equatorialToEcliptic: equatorialToEcliptic,
+    directionOverGround: directionOverGround,
+    PLANETS: PLANETS,
     sunLongitude: sunLongitude,
     moonPhase: moonPhase,
     nextPhase: nextPhase,
