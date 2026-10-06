@@ -34,8 +34,18 @@ the same side, because the same Sun lights both and the lit limb points at it wh
 standing on. What differs is how much: the two fractions always add to one. When the Moon is full
 for us it is a new Earth for anyone up there, and the picture says so without a caption.
 
+Both discs carry their real surface. The Moon gets its maria, at their selenographic positions and
+squashed towards the limb the way a circle on a sphere actually is, so the face is the one you can
+pick out from a balcony. The Earth gets coastlines, drawn orthographically around the point the
+Moon is standing over at that moment, so the disc shows the side the Moon can actually see and
+turns through the day. Markings stop at the terminator because they are painted inside the same
+clip as the light. `tests/test_surface.py` checks both by reading pixels where known places should
+land, which is the only way to catch a mirrored longitude: it looks fine, and it is the far side.
+
 **The four, side by side.** Distance, how long each has been up there, and what each is for, on one
-ten-times scale — the only way four numbers spanning four thousandfold fit on a page.
+ten-times scale, which is the only way four numbers spanning four thousandfold fit on a page. The
+list owns the columns and each row borrows them through `subgrid`, so the four bars start at the
+same place; sized per row, the name column came out a different width on every line.
 
 **From where you are.** Optional, and the page is useful without it. Give it a place and it works
 out sunrise, sunset, when the sky goes properly dark and for how long, then says one honest line
@@ -153,7 +163,10 @@ assets/ephem.js     real JPL positions for Webb and Roman (generated — see too
 assets/vendor/      satellite.js 5.0.0 (MIT), as native ES modules
 assets/vendor/PROVENANCE.md  where it came from, what was changed, how to update it
 assets/world.js     simplified borders, English + Italian names (~70 KB)
+assets/land.js      coastlines for the Earth disc (generated: see tools/)
 tools/make-ephem.py rebuilds assets/ephem.js from JPL Horizons
+tools/make-land.mjs rebuilds assets/land.js from assets/world.js
+tools/verify.py     contrast, target size, names, headings, overflow, reduced motion
 tools/horizons-raw/ the raw Horizons responses, so the build can be checked
 ```
 

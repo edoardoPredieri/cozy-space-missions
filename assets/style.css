@@ -883,16 +883,31 @@ a:focus-visible, button:focus-visible, input:focus-visible{
 
 /* ---- the four, side by side ---- */
 
-.cmp-list{ list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); }
+/* The columns belong to the list, not to each row. Sized per row, the name
+   column was a different width on every line and the four bars started at four
+   different places, which is the one thing a row of bars must not do. */
+.cmp-list{
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: var(--s-3);
+  grid-template-columns: minmax(84px, max-content) minmax(0, 1fr) 150px max-content;
+}
 .cmp{
   display: grid;
-  grid-template-columns: minmax(84px, auto) minmax(0, 1fr) 150px auto;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   grid-template-areas: "name what bar dist"
                        "name what bar age";
   gap: 2px var(--s-3);
   align-items: center;
   padding: var(--s-2) 0;
   border-bottom: 1px solid var(--line);
+}
+/* Without subgrid the rows cannot share the list's columns, so the name column
+   is given a width instead. Fixed is worse than shared, and far better than
+   four different ones. */
+@supports not (grid-template-columns: subgrid){
+  .cmp-list{ display: block; }
+  .cmp{ grid-template-columns: 112px minmax(0, 1fr) 150px 108px; margin-bottom: var(--s-3); }
 }
 .cmp:last-child{ border-bottom: 0; }
 .cmp-name{
@@ -964,12 +979,16 @@ a:focus-visible, button:focus-visible, input:focus-visible{
 .tn.is-good .tn-name{ color: var(--amber); }
 
 @media (max-width: 780px){
+  /* Too narrow for four columns: the row folds, and the list hands its columns
+     back so each row can lay itself out. */
+  .cmp-list{ display: block; }
   .cmp{
     grid-template-columns: 1fr auto;
     grid-template-areas: "name dist"
                          "what age"
                          "bar  bar";
     gap: 4px var(--s-3);
+    margin-bottom: var(--s-3);
   }
   .cmp-bar{ margin-top: 4px; }
   .sun-grid{ grid-template-columns: repeat(2, 1fr); }

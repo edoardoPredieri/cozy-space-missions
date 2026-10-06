@@ -417,11 +417,143 @@
   /*  The Moon tonight, and the Earth from there                         */
   /* ------------------------------------------------------------------ */
 
+  /* Two round bodies with nothing on them read as two counters, not as the
+     Moon and the Earth. So each disc gets its real surface: the Moon the
+     markings anyone can see from a balcony, the Earth whichever coastlines
+     happen to be facing the Moon at this moment.
+
+     Both are drawn with the same projection a sphere gives you from far away:
+     a point at longitude l and latitude b, measured from whatever is at the
+     centre of the disc, lands at (sin l cos b, sin b), and is behind the body
+     when cos l cos b turns negative. */
+
+  function orthographic(lonDeg, latDeg, lon0Deg, lat0Deg) {
+    var D = Math.PI / 180;
+    var lon = (lonDeg - lon0Deg) * D, lat = latDeg * D, lat0 = lat0Deg * D;
+    var cosLat = Math.cos(lat), sinLat = Math.sin(lat);
+    var cosLon = Math.cos(lon);
+    return {
+      x: cosLat * Math.sin(lon),
+      y: Math.cos(lat0) * sinLat - Math.sin(lat0) * cosLat * cosLon,
+      z: Math.sin(lat0) * sinLat + Math.cos(lat0) * cosLat * cosLon   // < 0 is round the back
+    };
+  }
+
+  /* ---- the Moon ---- */
+
+  /* The Moon keeps one face turned to us, so its markings are a fixed list:
+     the maria, in selenographic longitude (east positive, the Crisium side)
+     and latitude, with the angular radius each one covers. These are the dark
+     patches you can pick out with your eyes on a clear night, which is the
+     only reason they are here. */
+  /* Each sea is a few overlapping lobes rather than one circle: a circle reads
+     as a crater, and the seas are the irregular part. Procellarum runs down
+     the western limb, Frigoris is the thin arc across the top. */
+  var MARIA = [
+    { lon: -50, lat:  32, r: 13, a: .30 },   // Oceanus Procellarum, north
+    { lon: -58, lat:  12, r: 15, a: .32 },   //   "        "        middle
+    { lon: -54, lat: -10, r: 12, a: .30 },   //   "        "        south
+    { lon: -31, lat:   8, r:  7, a: .30 },   // Mare Insularum, joining the two
+    { lon: -17, lat:  34, r: 17, a: .42 },   // Mare Imbrium
+    { lon:  -5, lat:  26, r:  9, a: .38 },   //   its eastern lobe
+    { lon:  17, lat:  28, r: 11, a: .44 },   // Mare Serenitatis
+    { lon:  28, lat:  10, r: 11, a: .44 },   // Mare Tranquillitatis
+    { lon:  37, lat:   2, r:  8, a: .40 },   //   its southern lobe
+    { lon:  59, lat:  17, r:  8, a: .42 },   // Mare Crisium
+    { lon:  51, lat:  -8, r: 10, a: .36 },   // Mare Fecunditatis
+    { lon:  35, lat: -15, r:  7, a: .34 },   // Mare Nectaris
+    { lon: -17, lat: -21, r:  9, a: .32 },   // Mare Nubium
+    { lon: -24, lat: -11, r:  6, a: .28 },   // Mare Cognitum
+    { lon: -39, lat: -24, r:  7, a: .32 },   // Mare Humorum
+    { lon: -24, lat:  55, r:  6, a: .24 },   // Mare Frigoris, west
+    { lon:   2, lat:  58, r:  6, a: .24 },   //   "       "     middle
+    { lon:  24, lat:  53, r:  6, a: .24 },   //   "       "     east
+    { lon:   4, lat:  13, r:  5, a: .30 }    // Mare Vaporum
+  ];
+
+  /* Tycho. Not a dark patch but a bright one, and the feature that tells you
+     at a glance which way up the Moon is: kept faint, because at this size a
+     hard white dot looks like a scratch on the screen. */
+  var TYCHO = { lon: -11, lat: -43, r: 7 };
+
+  function blob(c, cx, cy, R, p, colour, alpha) {
+    var o = orthographic(p.lon, p.lat, 0, 0);
+    if (o.z < 0.12) return;                       // too close to the limb to mean anything
+    var x = cx + R * o.x, y = cy - R * o.y;
+    var size = R * Math.sin(p.r * Math.PI / 180);
+    var angle = Math.atan2(-o.y, o.x);            // outward from the centre of the disc
+
+    /* A circle on a sphere is an ellipse on the disc, squashed along the line
+       out from the centre by exactly how far round the curve it sits. */
+    var g = c.createRadialGradient(x, y, 0, x, y, Math.max(2, size));
+    g.addColorStop(0, colour.replace('{a}', alpha.toFixed(2)));
+    g.addColorStop(0.72, colour.replace('{a}', (alpha * 0.85).toFixed(2)));
+    g.addColorStop(1, colour.replace('{a}', '0'));
+
+    c.save();
+    c.translate(x, y);
+    c.rotate(angle);
+    c.scale(Math.max(0.18, o.z), 1);
+    c.translate(-x, -y);
+    c.fillStyle = g;
+    c.beginPath(); c.arc(x, y, Math.max(2, size), 0, Math.PI * 2); c.fill();
+    c.restore();
+  }
+
+  function paintMoonSurface(c, cx, cy, R) {
+    MARIA.forEach(function (m) {
+      blob(c, cx, cy, R, m, 'rgba(96,104,124,{a})', m.a);
+    });
+    blob(c, cx, cy, R, TYCHO, 'rgba(255,253,246,{a})', 0.16);
+  }
+
+  /* ---- the Earth ---- */
+
+  /* Which way the Earth is facing the Moon right now. The Moon is overhead of
+     exactly one point on the ground at any moment, and that point is the
+     middle of the face the Moon can see. */
+  function subLunarPoint(now) {
+    var m = A.moon(now);
+    var eq = A.eclipticToEquatorial(m.lon, m.lat, now);
+    return A.subPoint(eq.ra, eq.dec, now);
+  }
+
+  function paintEarthSurface(c, cx, cy, R, now) {
+    var land = window.LAND;
+    if (!land) return;
+    var sub = subLunarPoint(now);
+
+    c.save();
+    c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.clip();
+    c.fillStyle = 'rgba(126,166,106,.70)';
+
+    land.forEach(function (ring) {
+      var started = false, any = false;
+      c.beginPath();
+      for (var i = 0; i < ring.length; i++) {
+        var o = orthographic(ring[i][0], ring[i][1], sub.lon, sub.lat);
+        /* Points round the back are pushed out to the limb rather than
+           dropped, so a coastline that runs off the edge closes against it
+           instead of cutting a straight line across the ocean. */
+        var sx = o.x, sy = o.y;
+        if (o.z < 0) {
+          var len = Math.hypot(sx, sy) || 1;
+          sx /= len; sy /= len;
+        } else { any = true; }
+        var px = cx + R * sx, py = cy - R * sy;
+        if (!started) { c.moveTo(px, py); started = true; } else { c.lineTo(px, py); }
+      }
+      c.closePath();
+      if (any) c.fill();
+    });
+    c.restore();
+  }
+
   /* Both discs are lit from the same side, because both are lit by the same
      Sun: the lit limb points at it whichever of the two you are standing on.
      What differs is how much — and the two fractions add to one, which is the
      whole point of drawing them together. */
-  function drawPhase(canvas, lit, litOnRight, colours) {
+  function drawPhase(canvas, lit, litOnRight, colours, surface) {
     if (!canvas) return;
     var c = canvas.getContext('2d');
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -479,6 +611,10 @@
       g.addColorStop(1, colours.lit);
       c.fillStyle = g;
       c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.fill();
+
+      /* The surface goes on inside the same clip, so the markings stop at the
+         terminator exactly where the light does. */
+      if (surface) surface(c, cx, cy, R);
       c.restore();
     }
   }
@@ -495,9 +631,11 @@
     if (pair) pair.setAttribute('data-sun', litOnRight ? 'right' : 'left');
 
     drawPhase($('moon-disc'), ph.illuminated, litOnRight,
-      { dark: '#171d2c', rim: 'rgba(205,213,228,.28)', lit: '#c9cdd8', bright: '#f2f4f8' });
+      { dark: '#171d2c', rim: 'rgba(205,213,228,.28)', lit: '#c9cdd8', bright: '#f2f4f8' },
+      paintMoonSurface);
     drawPhase($('earth-disc'), ph.earthIlluminated, litOnRight,
-      { dark: '#121a2b', rim: 'rgba(127,176,232,.30)', lit: '#4d7fbf', bright: '#9fd0f0' });
+      { dark: '#121a2b', rim: 'rgba(127,176,232,.30)', lit: '#4d7fbf', bright: '#9fd0f0' },
+      function (c, cx, cy, R) { paintEarthSurface(c, cx, cy, R, now); });
 
     set('moon-name', CSM.t('moon.' + ph.key));
     set('moon-lit', CSM.fmt(ph.illuminated * 100, ph.illuminated < 0.1 ? 1 : 0) + '%');
@@ -734,11 +872,18 @@
   }
 
   P.on(paintPlace);
-  CSM.on('lang', function () { paintPhases(); paintCompare(); paintPlace(); drawMap(); });
+  CSM.on('lang', function () {
+    paintDate(); paintPhases(); paintCompare(); paintPlace(); drawMap();
+  });
   CSM.onResize(function () { sizeMap(); paintPhases(); });
 
-  set('home-date', new Date().toLocaleDateString(CSM.t('locale'),
-      { weekday: 'long', day: 'numeric', month: 'long' }));
+  /* Written out in the reader's language, so it has to be redrawn when they
+     change it: it was left out of the language handler and stayed English. */
+  function paintDate() {
+    set('home-date', new Date().toLocaleDateString(CSM.t('locale'),
+        { weekday: 'long', day: 'numeric', month: 'long' }));
+  }
+  paintDate();
 
   P.wire({
     form: 'home-form', input: 'home-input', results: 'home-results',

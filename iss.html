@@ -11,7 +11,7 @@
      see the README. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.wheretheiss.at https://api.spaceflightnewsapi.net https://nominatim.openstreetmap.org; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>Cozy Space Missions — where the ISS is right now</title>
+<title>Cozy Space Missions: where the ISS is right now</title>
 <meta name="description" content="A quiet window on the sky: the International Space Station's live position, when it passes over you, and where Earth sits among its neighbours.">
 <meta name="theme-color" content="#0a0f1e">
 
@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=15">
+<link rel="stylesheet" href="assets/style.css?v=16">
 </head>
 <body data-satellite="iss">
 
@@ -220,7 +220,7 @@
         <div class="dome-wrap">
           <canvas id="dome" role="img" data-i18n-aria-label="obs.dome.alt"
                   aria-label="Sky dome seen from your position, with the Station's current direction"></canvas>
-          <p class="dome-cap" id="dome-cap" data-i18n="obs.dome.below">Below the horizon right now</p>
+          <p class="dome-cap" id="dome-cap" data-i18n="obs.dome.below">Below your horizon right now</p>
         </div>
 
         <div class="obs-stats">
@@ -253,8 +253,9 @@
              data-i18n-aria-label="pass.progress" aria-label="Reading the track" hidden><span></span></div>
         <ol class="pass-list" id="pass-list"></ol>
         <p class="hint pass-ceiling" id="pass-ceiling" hidden></p>
-        <p class="hint" id="pass-hint" data-i18n="pass.hint">Computed from the Station's own track over the
-        next twelve hours. A pass marked as visible means it is still in sunlight while your sky is dark.</p>
+        <p class="hint" id="pass-hint" data-i18n="pass.hint">Worked out from the Station's own track over
+        the next twelve hours. A pass counts as visible when the Station is still in sunlight while your sky
+        is already dark.</p>
       </div>
     </div>
   </section>
@@ -267,8 +268,9 @@
         <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
         <h2 id="ladder-title" data-i18n="ladder.title">How far up is up?</h2>
       </div>
-      <p class="sec-sub" data-i18n="ladder.sub">Space is not far away — it is just straight up. On this
-      scale each step is ten times the one before.</p>
+      <p class="sec-sub" data-i18n="ladder.sub">Space is not far away, it is just straight up. Everything
+      sits on one line here, from the edge of space out to Neptune, and each step along it is ten times the
+      one before.</p>
     </div>
 
     <div class="card">
@@ -288,9 +290,11 @@
         </div>
       </div>
 
-      <p class="fig-cap" data-i18n="ladder.cap">Everything is on the same line, and each step is ten times
-      the one before: the Station sits closer to you than many capitals are to each other, the Moon a
-      thousand times further, Neptune ten thousand times further again.</p>
+      <p class="fig-cap" data-i18n="ladder.cap">Each step is ten times the one before. The Station is closer
+      to you than many capitals are to each other, the Moon a thousand times further, Neptune ten thousand
+      times further again. Everything sits where it is <em>today</em>, not in the order of the orbits: that
+      is why Venus is nearer than the Sun this month, while Mercury is on the far side of it and sits
+      further. Zoom in on the near end to separate the Station from Hubble.</p>
       <p class="hint" data-i18n="zoom.hint">Drag to pan, ⌘ or Ctrl with the wheel to zoom, or use the buttons.
       With the figure focused, the arrow keys pan and + and − zoom.</p>
     </div>
@@ -304,8 +308,8 @@
         <svg class="sec-orn" aria-hidden="true"><use href="#i-star"></use></svg>
         <h2 id="solar-title" data-i18n="solar.title">The neighbourhood</h2>
       </div>
-      <p class="sec-sub" data-i18n="solar.sub">Where the whole thing sits today: the inner planets in their
-      real positions, and our small blue dot with the Station a hair's breadth above it.</p>
+      <p class="sec-sub" data-i18n="solar.sub">Where the whole thing sits today: the eight planets in their
+      real positions, seen from above. Keep zooming past Earth and you will find the Moon, then the Station.</p>
     </div>
 
     <div class="card">
@@ -407,18 +411,18 @@
   <p class="foot-meta" data-i18n="foot.meta">Made slowly · <a href="https://github.com/edoardoPredieri/cozy-space-missions" rel="noopener">source on GitHub</a></p>
 </footer>
 
-<script src="assets/config.js?v=15"></script>
-<script src="assets/world.js?v=15"></script>
-<script src="assets/i18n.js?v=15"></script>
-<script src="assets/astro.js?v=15"></script>
-<script src="assets/globe.js?v=15"></script>
-<script src="assets/app.js?v=15"></script>
-<script src="assets/place.js?v=15"></script>
-<script src="assets/observer.js?v=15"></script>
+<script src="assets/config.js?v=16"></script>
+<script src="assets/world.js?v=16"></script>
+<script src="assets/i18n.js?v=16"></script>
+<script src="assets/astro.js?v=16"></script>
+<script src="assets/globe.js?v=16"></script>
+<script src="assets/app.js?v=16"></script>
+<script src="assets/place.js?v=16"></script>
+<script src="assets/observer.js?v=16"></script>
 <!-- the shipped L2 table, so the ladder can place Webb and Roman honestly -->
-<script src="assets/ephem.js?v=15"></script>
-<script src="assets/l2.js?v=15"></script>
-<script src="assets/space.js?v=15"></script>
-<script src="assets/news.js?v=15"></script>
+<script src="assets/ephem.js?v=16"></script>
+<script src="assets/l2.js?v=16"></script>
+<script src="assets/space.js?v=16"></script>
+<script src="assets/news.js?v=16"></script>
 </body>
 </html>

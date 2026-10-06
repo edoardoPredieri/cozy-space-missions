@@ -48,7 +48,10 @@ OBLIQUITY = math.radians(23.439291)     # mean obliquity of the ecliptic, J2000
 # which is the interesting case for a spacecraft still under way.
 TARGETS = {
     "jwst":  {"command": "-170", "start": "2026-09-01", "stop": "2027-09-06", "step": "10 d"},
-    "roman": {"command": "-211", "start": "2026-08-31", "stop": "2026-10-02", "step": "1 d"},
+    "roman": {"command": "-211", "start": "2026-09-01", "stop": "2026-10-26", "step": "1 d"},
+    # Roman only launched in August, and Horizons will not answer past
+    # 26 October 2026: that is where its trajectory file currently ends,
+    # not where the mission does. Ask again and the stop date moves out.
 }
 
 MONTHS = {m: i + 1 for i, m in enumerate(

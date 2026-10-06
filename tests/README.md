@@ -14,6 +14,7 @@ python3 tests/test_phase.py     # the Moon disc shows the fraction the page clai
 python3 tests/test_missions.py  # each page speaks only for itself
 python3 tests/test_home.py      # there is a way home, and the solar view is honest
 python3 tests/test_future.py    # the pages age honestly once the table runs out
+python3 tests/test_surface.py   # the Moon's seas and the Earth's coasts are where they belong
 node    tests/sgp4check.mjs     # the propagator agrees with the official vectors
 ```
 
@@ -97,6 +98,16 @@ means, and the Moon must sit within 25° of the Sun a day after new and more tha
 155° away at full. If the conversion that puts a space station and a telescope a
 million kilometres away into one frame were wrong, those are the facts that would
 break first.
+
+**`test_surface.py`** checks the markings on the two discs on the front page,
+without looking at the picture. It works out independently where a handful of
+known places should land on each sphere, then reads the pixel there: the Sahara
+and central Asia must come out green, the mid Pacific blue, and Mare
+Tranquillitatis darker than the highlands south of it. Mirror a longitude and
+the drawing still looks like the Moon, just the far side of it, so the test also
+asserts that Mare Crisium is on the east and not the west. The Earth is sampled
+around new Moon, because that is when the face it turns toward the Moon is lit
+and there is anything to read.
 
 **`test_future.py`** winds the clock past the end of the shipped JPL table and
 checks that the L2 pages fall back to the computed L2 point, relabel the source

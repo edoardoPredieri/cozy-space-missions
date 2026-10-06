@@ -28,7 +28,7 @@ time.sleep(0.6)
 # date, page, what should be true on that day
 DAYS = [
     ("2026-09-25T12:00:00Z", "roman.html", "still cruising, table still covers it"),
-    ("2026-10-05T12:00:00Z", "roman.html", "past the end of the table, arrived"),
+    ("2026-10-05T12:00:00Z", "roman.html", "arrived, table still covers it"),
     ("2026-12-01T12:00:00Z", "roman.html", "commissioning"),
     ("2027-02-01T12:00:00Z", "roman.html", "journey over, section retired"),
     ("2027-09-01T12:00:00Z", "webb.html",  "near the end of Webb's table"),
